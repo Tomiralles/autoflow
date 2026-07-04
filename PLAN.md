@@ -26,7 +26,10 @@ Coste: 0 €/mes en capas gratuitas hasta tener tracción.
       trigger de perfil al registrarse, toggles de página pública ya en el modelo
 - [x] `vercel.json` con los 2 crons (recordatorios cada hora, automatizaciones diarias 07:00 UTC)
 - [x] `.env.example` con todas las variables
-- [ ] Crear proyecto en Supabase y aplicar la migración (necesita al usuario)
+- [x] Crear proyecto en Supabase y aplicar la migración (2026-07-04):
+      proyecto "autoflow" (ref `ezwfrcbcikicpzphbsyi`, eu-central-1), migración
+      `initial_schema` aplicada vía MCP — 11 tablas, RLS activo en todas.
+      `.env.local` creado; falta pegar service role key + claves Resend/UltraMsg
 - [x] Instalar shadcn/ui + dependencias (supabase-js, @supabase/ssr, resend) (2026-07-04)
       shadcn 4.x, base radix, preset Nova; 14 componentes base en `src/components/ui`
 - [x] Clientes Supabase + middleware de auth (2026-07-04):
@@ -35,10 +38,27 @@ Coste: 0 €/mes en capas gratuitas hasta tener tracción.
       `src/proxy.ts` (en Next 16 el middleware se llama proxy) — refresca sesión
       y protege /hoy /citas /clientes /automatico /ajustes /onboarding /admin
 
-### Fase 1 — Auth + Onboarding
-- Registro/login (Supabase Auth, email+password, en español)
-- Onboarding: alta de negocio (nombre, sector, horarios, servicios) — portar
-  `src/pages/Onboarding.jsx` incluyendo `seedEssentialAutomations` (las 4 esenciales)
+### Fase 1 — Auth + Onboarding ✅ (2026-07-04)
+- [x] Registro/login/logout (Supabase Auth, server actions, en español) +
+      ruta `/auth/confirm` para el enlace de confirmación por email
+- [x] Onboarding 3 pasos portado (negocio → servicios → listo) con
+      `seedEssentialAutomations` (las 4 esenciales, upsert idempotente)
+- [x] Plantillas portadas a `src/lib/automation-templates.ts` (única copia)
+- [x] `/hoy` placeholder + raíz que despacha según sesión
+- [x] Verificado E2E en navegador: registro → confirmación → login →
+      onboarding completo → panel. Datos comprobados en BD (negocio,
+      servicio, 4 automatizaciones activas, perfil por trigger).
+- Migraciones añadidas durante la fase:
+  - 0002: índice único de automations sin WHERE (el parcial rompía el upsert de PostgREST)
+  - 0003: policy "owner select" en businesses (el INSERT...RETURNING fallaba:
+    is_business_member no ve la fila nueva en el snapshot del propio statement)
+  - 0004: hardening de funciones (search_path fijo; SECURITY DEFINER sin RPC
+    público: handle_new_user solo supabase_auth_admin, helpers RLS solo authenticated)
+- PENDIENTE de decisión (Tomi): la confirmación por email está activada y el
+  SMTP integrado de Supabase solo envía ~2 correos/hora — inviable en producción.
+  Opciones: desactivar "Confirm email" (razonable con onboarding done-for-you)
+  o configurar SMTP propio con Resend en Auth. También recomendable activar
+  "Leaked password protection" (advisor de Supabase).
 
 ### Fase 2 — Núcleo operativo
 - Panel del día (citas de hoy, por confirmar, materiales, botón "Faena terminada"
