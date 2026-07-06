@@ -60,10 +60,26 @@ Coste: 0 €/mes en capas gratuitas hasta tener tracción.
   o configurar SMTP propio con Resend en Auth. También recomendable activar
   "Leaked password protection" (advisor de Supabase).
 
-### Fase 2 — Núcleo operativo
-- Panel del día (citas de hoy, por confirmar, materiales, botón "Faena terminada"
-  con checkbox de aviso premarcado por sector)
-- CRUD de servicios (con `materials_notes`) y de leads/pipeline
+### Fase 2 — Núcleo operativo ✅ (2026-07-06)
+- [x] Shell de la app: sidebar escritorio + barra inferior móvil, menú de 5
+      (Hoy, Citas, Clientes, Automático, Ajustes) — `(app)/layout.tsx` + `app-nav.tsx`
+- [x] Panel del día (`/hoy`): KPIs, reservas por confirmar (botón Confirmar con
+      aviso al cliente), citas de hoy con materiales, "Faena terminada" con
+      checkbox de aviso premarcado por sector, "Qué hacer hoy" (tareas), badge
+      de automatizaciones activas
+- [x] `/citas`: agenda agrupada por día + alta manual (copia materiales/duración
+      del servicio; nace confirmada) + cancelar
+- [x] `/clientes`: lista sin jerga CRM (en seguimiento / ganados y perdidos),
+      alta/edición, cambio de etapa por select (sin kanban)
+- [x] `/automatico`: las 9 plantillas por categoría con interruptor (upsert al
+      activar una no sembrada) y contador de ejecuciones
+- [x] `/ajustes`: datos del negocio + CRUD de servicios con `materials_notes`
+      (desactivar en vez de borrar) + cerrar sesión
+- [x] `src/lib/notifications.ts` portado (confirmAppointment, completeService,
+      recordSaleClosed, renderTemplate) sobre `email.ts` (Resend) y
+      `whatsapp.ts` (UltraMsg), ambos no-op silencioso sin claves
+- [x] Verificado E2E: crear cita → aparece en panel → faena terminada →
+      completada en BD; cliente creado; toggle de automatización persiste
 
 ### Fase 3 — Reservas públicas
 - Página pública `/{slug}` con toggles de personalización (leer `public_page_settings`)
