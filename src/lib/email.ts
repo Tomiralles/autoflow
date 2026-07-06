@@ -9,6 +9,7 @@ export async function enviarEmail(opts: {
   subject: string;
   body: string;
   fromName?: string;
+  attachments?: { filename: string; content: string }[];
 }): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.RESEND_FROM_EMAIL;
@@ -24,6 +25,7 @@ export async function enviarEmail(opts: {
       to: opts.to,
       subject: opts.subject,
       text: opts.body,
+      attachments: opts.attachments,
     });
     if (error) {
       console.error("[email] error de Resend:", error);

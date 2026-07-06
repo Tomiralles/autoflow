@@ -21,6 +21,21 @@ export interface ServiceInput {
   duration_minutes: number;
 }
 
+// Rutas propias de la app que un negocio no puede ocupar como URL pública
+const SLUGS_RESERVADOS = [
+  "login",
+  "registro",
+  "onboarding",
+  "hoy",
+  "citas",
+  "clientes",
+  "automatico",
+  "ajustes",
+  "admin",
+  "auth",
+  "api",
+];
+
 function generarSlug(nombre: string): string {
   return nombre
     .toLowerCase()
@@ -47,6 +62,10 @@ export async function crearNegocio(
   const slugPedido = input.slug.trim();
   let slug = slugPedido || generarSlug(input.name);
   if (!slug) slug = `negocio-${user.id.slice(0, 6)}`;
+  if (SLUGS_RESERVADOS.includes(slug)) {
+    if (slugPedido) return { slugTaken: true };
+    slug = `${slug}-negocio`;
+  }
 
   for (let intento = 0; intento < 2; intento++) {
     const { data, error } = await supabase

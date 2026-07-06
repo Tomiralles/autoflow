@@ -81,12 +81,34 @@ Coste: 0 €/mes en capas gratuitas hasta tener tracción.
 - [x] Verificado E2E: crear cita → aparece en panel → faena terminada →
       completada en BD; cliente creado; toggle de automatización persiste
 
-### Fase 3 — Reservas públicas
-- Página pública `/{slug}` con toggles de personalización (leer `public_page_settings`)
-- Flujo de reserva: anti-doble-reserva (ya garantizado por índice único), creación de
-  lead, email de confirmación con enlace .ics (portar `src/lib/ics.js` — ahora el .ics
-  puede ir como ADJUNTO real con Resend, mejor que el enlace del proyecto viejo)
-- WhatsApp de confirmación vía UltraMsg
+### Fase 3 — Reservas públicas ✅ (2026-07-06)
+- [x] Página pública `/{slug}` con toggles (`public_page_settings`: precios,
+      teléfono, dirección, hero/logo, redes, texto de políticas) y colores
+      del negocio. Slugs de rutas de la app reservados en el onboarding.
+- [x] Wizard de reserva: servicio → día (14 días, `working_hours` con
+      fallback L-S 9-19) → hueco (duración del servicio, ocupados fuera) →
+      datos → éxito. Reintento limpio si el hueco se ocupa entre medias.
+- [x] DECISIÓN DE ARQUITECTURA (sustituye al "service role en rutas de
+      servidor" del plan original): el acceso anónimo va por 3 RPCs
+      SECURITY DEFINER (migración 0005): `get_public_business` (columnas
+      seguras + servicios), `get_booked_slots` (solo horas) y
+      `book_appointment` (valida negocio/servicio/fecha, crea lead + cita
+      pendiente + tarea de confirmación atómicamente, maneja el índice
+      anti-doble-reserva devolviendo `hueco_ocupado` y limpia el lead).
+      RLS intacto, sin service role en el servidor web, superficie mínima.
+      Los advisors marcarán estas 3 funciones como definer ejecutables por
+      anon: es intencional, son la API pública.
+- [x] Email de reserva SIEMPRE sale (texto de la automatización
+      `cita_confirmacion` si está activa + contador), con **.ics adjunto
+      real** (`src/lib/ics.ts` portado; adiós al enlace de storage del viejo)
+- [x] Confirmación del dueño (Fase 2) ya envía email + WhatsApp al cliente
+- [x] Verificado E2E anónimo: reserva desde /peluqueria-la-prueba → panel
+      "Por confirmar" → Confirmar → confirmada + lead en cita_confirmada.
+      Doble reserva del mismo hueco → error limpio y sin lead huérfano.
+      plan_status='inactive' apaga la página (gate de cobro manual).
+- Nota: WhatsApp en la reserva anónima se envía SOLO al confirmar el dueño
+  (los tokens del negocio no pueden viajar por la RPC pública). El quiz por
+  servicio (`quiz_questions`) queda fuera — se decidirá si se porta.
 
 ### Fase 4 — Motor de automatizaciones
 - Portar las 9 plantillas (`TEMPLATES` de `src/pages/Automations.jsx` del viejo)
