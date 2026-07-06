@@ -130,10 +130,28 @@ Coste: 0 €/mes en capas gratuitas hasta tener tracción.
   SUPABASE_SERVICE_ROLE_KEY en `.env.local` y en las env vars de Vercel,
   y crear CRON_SECRET en Vercel (con eso el 500 actual pasa a 200). (Vercel lo envía solo)
 
-### Fase 5 — Panel admin + facturas + gastos
-- Panel admin (solo `profiles.role = 'admin'`): listar negocios, cambiar
-  plan/plan_status a mano (cobro manual por Bizum/transferencia — SIN Stripe, decisión firme)
-- Facturas, gastos, tareas, interacciones (port directo)
+### Fase 5 — Panel admin + facturas + gastos ✅ (2026-07-06)
+- [x] `/admin` (fuera del área (app): una cuenta admin no necesita negocio):
+      lista todos los negocios vía RPC definer `admin_list_businesses`
+      (migración 0006; email del dueño desde auth.users, contadores; check
+      de admin DENTRO de la función) y cambia plan/plan_status con selects
+      (la policy "owner update" ya autoriza a is_admin; cobro manual SIN
+      Stripe). Enlace "Administración" en Ajustes solo para admins.
+- [x] `/dinero` (SIN entrada de menú — se llega desde el KPI "Ingresos del
+      mes" de /hoy, respetando el máximo de 5): resumen del mes
+      (cobrado/gastado/beneficio) + tabs Facturas (crear/cobrar/cancelar;
+      alimenta el KPI y la automatización factura_vencida) y Gastos
+      (apuntar/borrar por categoría)
+- [x] Interacciones: botón "Registrar llamada" en cada fila de /clientes
+      (contestó/no contestó/interesado/no interesado + notas) — actualiza
+      last_contact_date (reloj de lead_inactivo) y alimenta no_contesto
+- [x] Verificado E2E: admin cambia estado desde la UI (persistido),
+      factura creada→cobrada actualiza el resumen, gasto apuntado,
+      llamada registrada con last_contact_date al día
+- DECISIÓN: no hay página de tareas separada — "Qué hacer hoy" en /hoy
+  muestra las urgentes, que es lo que el dueño necesita (menú sigue en 5)
+- Usuario de prueba tomiralles+fase1 promovido a admin (por SQL; un usuario
+  no puede autopromoverse, la policy lo impide)
 
 ### Fase 6 — Paridad y corte
 - Tests de los flujos críticos (reserva, recordatorio, RLS entre negocios)

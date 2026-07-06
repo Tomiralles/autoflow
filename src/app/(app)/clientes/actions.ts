@@ -59,6 +59,42 @@ export async function editarCliente(
   return { ok: true };
 }
 
+// Registro rápido de una llamada. Alimenta dos automatizaciones: pone al
+// día last_contact_date (reloj de "lead inactivo") y, si no contestó, el
+// cron diario creará la tarea de rellamada (trigger no_contesto).
+export async function registrarLlamada(
+  leadId: string,
+  outcome: "contestado" | "no_contestado" | "interesado" | "no_interesado",
+  notes: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("business_id")
+    .eq("id", leadId)
+    .single();
+  if (!lead) return { error: "El cliente ya no existe." };
+
+  const { error } = await supabase.from("interactions").insert({
+    business_id: lead.business_id,
+    lead_id: leadId,
+    type: "llamada",
+    outcome,
+    notes: notes.trim() || null,
+  });
+  if (error) return { error: "No se pudo registrar la llamada." };
+
+  await supabase
+    .from("leads")
+    .update({ last_contact_date: new Date().toISOString() })
+    .eq("id", leadId);
+
+  revalidatePath("/clientes");
+  revalidatePath("/hoy");
+  return { ok: true };
+}
+
 // Cambio de etapa desde la lista (select simple, no tablero kanban)
 export async function cambiarEtapa(
   leadId: string,

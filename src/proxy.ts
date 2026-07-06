@@ -9,6 +9,7 @@ const PROTECTED_PREFIXES = [
   "/clientes",
   "/automatico",
   "/ajustes",
+  "/dinero",
   "/onboarding",
   "/admin",
 ];

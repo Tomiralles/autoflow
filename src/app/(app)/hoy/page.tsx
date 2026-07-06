@@ -120,22 +120,34 @@ export default async function HoyPage() {
         </p>
       </div>
 
-      {/* KPIs — números grandes, de un vistazo */}
+      {/* KPIs — números grandes, de un vistazo. "Ingresos del mes" lleva
+          a /dinero (facturas y gastos), que no ocupa entrada de menú */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {kpis.map(({ label, value, icon: Icon, color, bg }) => (
-          <div
-            key={label}
-            className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm"
-          >
+        {kpis.map(({ label, value, icon: Icon, color, bg }) => {
+          const card = (
             <div
-              className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg ${bg}`}
+              className={`rounded-xl border border-slate-100 bg-white p-5 shadow-sm ${label === "Ingresos del mes" ? "transition-shadow hover:shadow-md" : ""}`}
             >
-              <Icon size={20} className={color} />
+              <div
+                className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg ${bg}`}
+              >
+                <Icon size={20} className={color} />
+              </div>
+              <p className="text-2xl font-bold text-slate-900">{value}</p>
+              <p className="mt-0.5 text-sm text-slate-500">
+                {label}
+                {label === "Ingresos del mes" && " →"}
+              </p>
             </div>
-            <p className="text-2xl font-bold text-slate-900">{value}</p>
-            <p className="mt-0.5 text-sm text-slate-500">{label}</p>
-          </div>
-        ))}
+          );
+          return label === "Ingresos del mes" ? (
+            <Link key={label} href="/dinero">
+              {card}
+            </Link>
+          ) : (
+            <div key={label}>{card}</div>
+          );
+        })}
       </div>
 
       {/* Reservas por confirmar */}

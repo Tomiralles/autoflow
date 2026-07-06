@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Phone, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,6 +25,7 @@ import {
   cambiarEtapa,
   crearCliente,
   editarCliente,
+  registrarLlamada,
   type ClienteInput,
 } from "./actions";
 
@@ -149,6 +150,82 @@ export function NuevoClienteDialog({ businessId }: { businessId: string }) {
   );
 }
 
+const RESULTADOS_LLAMADA = [
+  { id: "contestado", label: "Contestó" },
+  { id: "no_contestado", label: "No contestó" },
+  { id: "interesado", label: "Interesado" },
+  { id: "no_interesado", label: "No interesado" },
+] as const;
+
+function LlamadaDialog({ cliente }: { cliente: ClienteRow }) {
+  const [open, setOpen] = useState(false);
+  const [resultado, setResultado] =
+    useState<(typeof RESULTADOS_LLAMADA)[number]["id"]>("contestado");
+  const [notas, setNotas] = useState("");
+  const [pending, startTransition] = useTransition();
+
+  const guardar = () =>
+    startTransition(async () => {
+      const r = await registrarLlamada(cliente.id, resultado, notas);
+      if (r.error) toast.error(r.error);
+      else {
+        toast.success(
+          resultado === "no_contestado"
+            ? "Apuntado — mañana te saldrá la tarea de volver a llamar"
+            : "Llamada registrada"
+        );
+        setNotas("");
+        setOpen(false);
+      }
+    });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button
+          title="Registrar llamada"
+          className="shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
+        >
+          <Phone size={15} />
+        </button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Llamada a {cliente.full_name}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-2">
+            {RESULTADOS_LLAMADA.map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => setResultado(r.id)}
+                className={`rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition-all ${
+                  resultado === r.id
+                    ? "border-blue-500 bg-blue-50 text-blue-700"
+                    : "border-slate-200 text-slate-700 hover:border-slate-300"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+          <Textarea
+            rows={2}
+            className="resize-none"
+            placeholder="Notas (opcional)"
+            value={notas}
+            onChange={(e) => setNotas(e.target.value)}
+          />
+          <Button className="w-full" onClick={guardar} disabled={pending}>
+            {pending ? "Guardando..." : "Registrar"}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function FilaCliente({ cliente }: { cliente: ClienteRow }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -197,6 +274,7 @@ export function FilaCliente({ cliente }: { cliente: ClienteRow }) {
           ))}
         </SelectContent>
       </Select>
+      <LlamadaDialog cliente={cliente} />
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
           <button

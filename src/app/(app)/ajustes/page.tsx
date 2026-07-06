@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getBusinessOrRedirect } from "@/lib/business";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -12,15 +13,19 @@ export default async function AjustesPage() {
   const business = await getBusinessOrRedirect();
   const supabase = await createClient();
 
-  const { data } = await supabase
-    .from("services")
-    .select(
-      "id, name, description, price, duration_minutes, materials_notes, is_active"
-    )
-    .eq("business_id", business.id)
-    .order("sort_order");
+  const [serviciosRes, perfilRes] = await Promise.all([
+    supabase
+      .from("services")
+      .select(
+        "id, name, description, price, duration_minutes, materials_notes, is_active"
+      )
+      .eq("business_id", business.id)
+      .order("sort_order"),
+    supabase.from("profiles").select("role").single(),
+  ]);
 
-  const servicios = (data ?? []) as ServicioRow[];
+  const servicios = (serviciosRes.data ?? []) as ServicioRow[];
+  const esAdmin = perfilRes.data?.role === "admin";
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-6">
@@ -31,7 +36,17 @@ export default async function AjustesPage() {
             Tu negocio y tus servicios
           </p>
         </div>
-        <BotonSalir />
+        <div className="flex items-center gap-3">
+          {esAdmin && (
+            <Link
+              href="/admin"
+              className="text-sm font-medium text-blue-600 hover:underline"
+            >
+              Administración
+            </Link>
+          )}
+          <BotonSalir />
+        </div>
       </div>
 
       <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
