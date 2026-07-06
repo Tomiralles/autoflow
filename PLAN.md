@@ -110,15 +110,25 @@ Coste: 0 €/mes en capas gratuitas hasta tener tracción.
   (los tokens del negocio no pueden viajar por la RPC pública). El quiz por
   servicio (`quiz_questions`) queda fuera — se decidirá si se porta.
 
-### Fase 4 — Motor de automatizaciones
-- Portar las 9 plantillas (`TEMPLATES` de `src/pages/Automations.jsx` del viejo)
-- Portar `renderTemplate` (variables {{nombre}} {{fecha}} {{hora}} {{servicio}}
-  {{negocio}} {{cliente}} {{importe}} {{dias}}) — aquí UNA sola copia compartida
-- `/api/cron/reminders` (cada hora): recordatorio 24h por negocio según su Automation
-- `/api/cron/automations` (diario): portar las 5 rutinas de
-  `checkInactiveLeads/entry.ts` del viejo: runLeadInactivo, runClienteInactivo,
-  runPostVenta, runFacturaVencida, runNoContesto
-- Ambas rutas verifican `Authorization: Bearer CRON_SECRET` (Vercel lo envía solo)
+### Fase 4 — Motor de automatizaciones ✅ (2026-07-06)
+- [x] Plantillas y `renderTemplate` ya portados en fases anteriores (única copia)
+- [x] `/api/cron/reminders` (cada hora): recordatorio 24h por negocio según su
+      Automation (ventana por condition_days, texto propio, email + WhatsApp,
+      `reminder_sent` se marca antes de contar). Horas calculadas en
+      Europe/Madrid aunque Vercel corra en UTC.
+- [x] `/api/cron/automations` (diario): las 5 rutinas portadas 1:1 con
+      queries filtradas en BD (no fetch-all como el viejo): lead_inactivo,
+      cliente_inactivo, post_venta, factura_vencida, no_contesto
+- [x] Lógica en `src/lib/cron/{reminders,automations}.ts` recibiendo el
+      cliente como parámetro (testeable); las rutas usan `createAdminClient()`
+- [x] Gate `Authorization: Bearer CRON_SECRET`; sin secreto → 501 (cerrado)
+- [x] Verificado con harness real (`scripts/test-crons.ts`, sesión de usuario
+      + RLS + NODE_OPTIONS=--conditions=react-server): las 6 rutinas
+      dispararon 1 vez con datos preparados y 0 veces al repetir
+      (idempotencia por sellos). Gate probado con curl: 401/401/pasa.
+- PENDIENTE para que corran en producción (Tomi): pegar
+  SUPABASE_SERVICE_ROLE_KEY en `.env.local` y en las env vars de Vercel,
+  y crear CRON_SECRET en Vercel (con eso el 500 actual pasa a 200). (Vercel lo envía solo)
 
 ### Fase 5 — Panel admin + facturas + gastos
 - Panel admin (solo `profiles.role = 'admin'`): listar negocios, cambiar
