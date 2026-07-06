@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { enviarEmail } from "@/lib/email";
 import { enviarWhatsApp } from "@/lib/whatsapp";
 import { hoyISO } from "@/lib/dates";
+import { renderTemplate } from "@/lib/templates";
 
 // Portado de src/lib/notifications.js del proyecto Base44. Misma lógica de
 // negocio; el transporte (Resend/UltraMsg) es tolerante a falta de claves.
@@ -15,15 +16,7 @@ export const APPOINTMENT_STATUS_TO_STAGE: Record<string, string> = {
   cancelada: "cerrado_perdido",
 };
 
-export function renderTemplate(
-  text: string | null | undefined,
-  vars: Record<string, string | null | undefined>
-): string {
-  return Object.entries(vars).reduce(
-    (acc, [key, value]) => acc.replaceAll(`{{${key}}}`, value || ""),
-    text || ""
-  );
-}
+export { renderTemplate };
 
 interface BusinessRow {
   id: string;

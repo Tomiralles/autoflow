@@ -153,10 +153,44 @@ Coste: 0 €/mes en capas gratuitas hasta tener tracción.
 - Usuario de prueba tomiralles+fase1 promovido a admin (por SQL; un usuario
   no puede autopromoverse, la policy lo impide)
 
-### Fase 6 — Paridad y corte
-- Tests de los flujos críticos (reserva, recordatorio, RLS entre negocios)
-- Dominio propio, deploy a Vercel, negocio demo para visitas comerciales
-- Verificación lado a lado con Base44 → cancelar suscripción Base44
+### Fase 6 — Paridad y corte (en curso, 2026-07-06)
+- [x] Tests unitarios (vitest, 17): huecos horarios, horario del día,
+      generación .ics (RFC 5545, cruce de día, escapado), renderTemplate.
+      `npm test`. Refactor: lógica pura extraída a `lib/slots.ts` y
+      `lib/templates.ts` para poder testearla.
+- [x] Test de RLS entre negocios (`scripts/test-rls.sql`, ejecutado OK):
+      un negocio no ve ni escribe datos de otro; los suyos sí.
+- [x] Lógica de crons verificada (`scripts/test-crons.ts`, Fase 4)
+- [x] `vercel.json`: reminders pasa a diario 07:30 UTC (plan Hobby de
+      Vercel no permite crons horarios; la ventana de 24 h lo cubre).
+      Mejora futura: ping horario externo (cron-job.org) o Vercel Pro.
+- [x] README con guía completa de deploy (GitHub → Vercel → env vars →
+      Site URL de Supabase)
+- [ ] DEPLOY (necesita a Tomi — sin credenciales de GitHub/token de Vercel
+      no se puede hacer desde aquí): seguir el README paso a paso
+- [ ] Dominio propio (decisión de Tomi; el subdominio .vercel.app vale
+      para empezar)
+- [ ] Negocio demo: "Peluquería La Prueba" ya sirve; pulir datos antes de
+      visitas comerciales si hace falta
+- [ ] Verificación lado a lado con Base44 → cancelar suscripción
+
+#### Checklist de paridad con Base44 (todo portado y verificado en local)
+| Funcionalidad | Base44 | Rebuild |
+|---|---|---|
+| Auth + onboarding con sembrado de automatizaciones | ✓ | ✓ (F1) |
+| Panel del día (confirmar, materiales, faena terminada) | ✓ | ✓ (F2) |
+| Agenda + alta manual de citas | ✓ | ✓ (F2) |
+| Clientes/pipeline + interacciones | ✓ | ✓ (F2+F5) |
+| Página pública con reserva y anti-doble-reserva | ✓ | ✓ (F3, mejor: atómico en BD) |
+| Email de reserva con .ics | enlace storage | ✓ adjunto real (F3) |
+| Recordatorio 24h (cron) | ✓ horario | ✓ diario en Hobby (F4) |
+| 5 rutinas diarias (cron) | ✓ | ✓ (F4, idempotencia verificada) |
+| Cron protegido | pendiente (gate secreto sin resolver) | ✓ Bearer CRON_SECRET |
+| Panel admin cobro manual | ✗ (pendiente) | ✓ (F5) |
+| Facturas + gastos | ✓ | ✓ (F5) |
+| Multi-tenancy | filtros en app | ✓ RLS en BD + test |
+| Nombre unificado | NexoCRM/AutoFlow mezclados | ✓ AutoFlow AI |
+| Quiz por servicio en reserva pública | ✓ | ✗ (decisión pendiente — único gap) |
 
 ## Mapa de porting (proyecto viejo → nuevo)
 

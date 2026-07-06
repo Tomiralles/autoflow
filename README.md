@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AutoFlow AI
 
-## Getting Started
+SaaS de citas, recordatorios y seguimiento automático para negocios de barrio
+(peluquerías, talleres, estética). Next.js 16 + Supabase + Resend + UltraMsg.
 
-First, run the development server:
+El estado del proyecto, las fases y las decisiones de producto viven en
+[PLAN.md](PLAN.md).
+
+## Desarrollo local
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # y rellenar claves
+npm run dev                  # http://localhost:3000
+npm test                     # tests unitarios (vitest)
+npm run build && npx eslint . # verificación completa
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Tests extra:
+- `scripts/test-rls.sql` — aislamiento RLS entre negocios (SQL Editor de Supabase)
+- `scripts/test-crons.ts` — lógica de los crons con sesión real:
+  `NODE_OPTIONS=--conditions=react-server TEST_EMAIL=... TEST_PASSWORD=... npx tsx scripts/test-crons.ts`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Deploy a Vercel (primera vez)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Subir el repo a GitHub** (privado):
+   ```bash
+   gh repo create autoflow --private --source . --push
+   # o crear el repo vacío en github.com y:
+   # git remote add origin https://github.com/<usuario>/autoflow.git
+   # git push -u origin master
+   ```
+2. **Importar en Vercel**: vercel.com → Add New → Project → elegir el repo.
+   Framework: Next.js (auto). Los crons de `vercel.json` se registran solos.
+3. **Variables de entorno** (Settings → Environment Variables), todas en
+   Production:
+   | Variable | Valor |
+   |---|---|
+   | `NEXT_PUBLIC_SUPABASE_URL` | `https://ezwfrcbcikicpzphbsyi.supabase.co` |
+   | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | la anon key (está en `.env.local`) |
+   | `SUPABASE_SERVICE_ROLE_KEY` | dashboard Supabase → Settings → API keys → service_role |
+   | `CRON_SECRET` | cualquier cadena larga aleatoria (Vercel la manda sola a los crons) |
+   | `NEXT_PUBLIC_APP_URL` | la URL final (p. ej. `https://autoflow-xxx.vercel.app`) |
+   | `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | cuando se active Resend |
+   | `ULTRAMSG_INSTANCE_ID` / `ULTRAMSG_TOKEN` | cuando se active WhatsApp |
+4. **Supabase → Authentication → URL Configuration**: poner la URL de
+   producción como Site URL (para que los enlaces de confirmación de email
+   no apunten a localhost).
+5. Probar: `https://<url>/peluqueria-la-prueba` (página pública) y login.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Notas:
+- Plan Hobby de Vercel: los crons solo pueden ser diarios. `reminders` corre
+  a las 07:30 UTC (ventana de 24 h → sigue funcionando). Si algún día se
+  quiere precisión horaria: Vercel Pro, o un ping horario externo
+  (cron-job.org) a `/api/cron/reminders` con header
+  `Authorization: Bearer <CRON_SECRET>`.
+- Sin `SUPABASE_SERVICE_ROLE_KEY` los crons devuelven 500 (el resto de la
+  app funciona igual: la página pública usa RPCs, no la service role).

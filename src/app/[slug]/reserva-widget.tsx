@@ -2,6 +2,11 @@
 
 import { useCallback, useMemo, useState, useTransition } from "react";
 import { Check, ChevronLeft, Clock } from "lucide-react";
+import {
+  generarHuecos,
+  horarioDelDia as horarioDelDiaLib,
+  type DayHours,
+} from "@/lib/slots";
 import { huecosOcupados, reservar } from "./actions";
 
 export interface PublicService {
@@ -13,11 +18,7 @@ export interface PublicService {
   image_url: string | null;
 }
 
-export interface DayHours {
-  open?: boolean;
-  start?: string;
-  end?: string;
-}
+export type { DayHours };
 
 export interface PublicBusiness {
   name: string;
@@ -27,23 +28,6 @@ export interface PublicBusiness {
   working_hours: Record<string, DayHours> | null;
   services: PublicService[];
   show_prices: boolean;
-}
-
-const DIAS = ["domingo", "lunes", "martes", "miercoles", "jueves", "viernes", "sabado"];
-
-function generarHuecos(start: string, end: string, durationMins: number): string[] {
-  const slots: string[] = [];
-  const [sh, sm] = start.split(":").map(Number);
-  const [eh, em] = end.split(":").map(Number);
-  let cur = sh * 60 + sm;
-  const endMin = eh * 60 + em;
-  while (cur + durationMins <= endMin) {
-    slots.push(
-      `${String(Math.floor(cur / 60)).padStart(2, "0")}:${String(cur % 60).padStart(2, "0")}`
-    );
-    cur += durationMins;
-  }
-  return slots;
 }
 
 function proximosDias(n: number): { iso: string; dia: string; num: string; mes: string }[] {
@@ -83,16 +67,8 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
   const color = business.primary_color || "#3B82F6";
   const dias = useMemo(() => proximosDias(14), []);
 
-  // Horario del día: si el negocio no lo ha configurado, L-S 09:00-19:00
   const horarioDelDia = useCallback(
-    (iso: string): DayHours => {
-      const nombre = DIAS[new Date(`${iso}T12:00:00`).getDay()];
-      const wh = business.working_hours;
-      if (wh && Object.keys(wh).length > 0) return wh[nombre] ?? { open: false };
-      return nombre === "domingo"
-        ? { open: false }
-        : { open: true, start: "09:00", end: "19:00" };
-    },
+    (iso: string): DayHours => horarioDelDiaLib(iso, business.working_hours),
     [business.working_hours]
   );
 
