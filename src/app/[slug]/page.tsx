@@ -86,12 +86,16 @@ export default async function PublicPage({ params }: PageProps) {
         )}
         <div className="relative">
           {mostrarHero && biz.logo_url && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={biz.logo_url}
-              alt={biz.name}
-              className="mx-auto mb-4 h-20 w-20 rounded-2xl object-cover ring-4 ring-white/20"
-            />
+            // Fondo blanco fijo: cualquier logo (con transparencia o
+            // colores que no combinen con el tema) se ve limpio siempre.
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-2xl bg-white p-2 shadow-sm ring-4 ring-white/20">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={biz.logo_url}
+                alt={biz.name}
+                className="h-full w-full object-contain"
+              />
+            </div>
           )}
           <h1 className="text-3xl font-bold tracking-tight text-white">
             {biz.name}
