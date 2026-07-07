@@ -60,12 +60,15 @@ export default async function PublicPage({ params }: PageProps) {
   const social = (settings.show_social !== false && biz.social_links) || null;
   const mostrarHero = settings.show_hero !== false;
   const heroImg = mostrarHero ? biz.hero_image_url : null;
+  // Sin foto de portada: dos manchas de color suaves con el color de
+  // acento sobre el color de cabecera, en vez de un color plano soso.
+  const fondoDecorativo = `radial-gradient(130% 110% at 105% -15%, ${color}45, transparent 55%), radial-gradient(130% 110% at -15% 115%, ${color}30, transparent 55%), ${secundario}`;
 
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Cabecera con la identidad del negocio */}
       <header
-        style={{ backgroundColor: secundario }}
+        style={heroImg ? { backgroundColor: secundario } : { background: fondoDecorativo }}
         className="relative overflow-hidden rounded-b-[2rem] px-5 pb-12 pt-10 text-center shadow-sm"
       >
         {heroImg && (
@@ -79,7 +82,7 @@ export default async function PublicPage({ params }: PageProps) {
             <div
               className="absolute inset-0"
               style={{
-                background: `linear-gradient(to bottom, ${secundario}cc, ${secundario}f2)`,
+                background: `linear-gradient(to bottom, ${secundario}99, ${secundario}e6)`,
               }}
             />
           </>
@@ -126,8 +129,12 @@ export default async function PublicPage({ params }: PageProps) {
         </div>
       </header>
 
-      {/* Banda de confianza — tranquiliza al cliente y luce la automatización */}
-      <div className="mx-auto -mt-6 max-w-md px-5">
+      {/* Banda de confianza — tranquiliza al cliente y luce la automatización.
+          `relative` es necesario: la cabecera de arriba también es
+          `relative` (por la foto de portada absoluta), así que sin esto
+          la cabecera se pintaría encima y taparía este bloque pese a ir
+          después en el HTML. */}
+      <div className="relative mx-auto -mt-6 max-w-md px-5">
         <div className="flex items-stretch justify-between gap-2 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
           {[
             { icon: CalendarCheck, label: "Confirmación\nal momento" },
