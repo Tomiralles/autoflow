@@ -166,8 +166,31 @@ Coste: 0 €/mes en capas gratuitas hasta tener tracción.
       Mejora futura: ping horario externo (cron-job.org) o Vercel Pro.
 - [x] README con guía completa de deploy (GitHub → Vercel → env vars →
       Site URL de Supabase)
-- [ ] DEPLOY (necesita a Tomi — sin credenciales de GitHub/token de Vercel
-      no se puede hacer desde aquí): seguir el README paso a paso
+- [x] DEPLOY EN VIVO (2026-07-07): https://autoflow-tonis-projects-baabf0b8.vercel.app
+      Tomi hizo `vercel login` por email (device code) + añadió las env vars por
+      su terminal PowerShell; deploy final vía `vercel deploy --prod` (CLI,
+      sin GitHub — pendiente conectar el repo para deploys automáticos por push).
+      Vercel Authentication (Deployment Protection) desactivada para que la
+      página pública sea accesible a clientes reales.
+      BUG CAZADO Y RESUELTO: las 3 env vars puestas desde PowerShell quedaron
+      GUARDADAS COMO CADENAS VACÍAS pese a que `vercel env ls` las mostraba
+      "Added"/"Encrypted" — causa exacta no confirmada al 100% (se sospechó
+      encoding UTF-16 del pipe de PowerShell, pero el mismo fallo con
+      `printf` en Git Bash apuntaba a otra cosa — posiblemente demora de
+      propagación de Vercel en el primer build). Diagnosticado comparando la
+      RPC llamada directa por curl (funcionaba) contra la página desplegada
+      (404 limpio, sin error en logs — porque el código solo miraba `data`
+      de la RPC, nunca `error`). Fix real: borrar + volver a crear las 3
+      vars y REDESPLEGAR; verificado con curl contra la URL viva (200 con
+      datos reales) antes de dar el asunto por cerrado — no fiarse de
+      `vercel env pull` como prueba, mostraba vacío incluso después de
+      arreglado. De paso, arreglado el bug real de fondo: `[slug]/page.tsx`
+      ahora loguea el `error` de la RPC en vez de tragárselo como 404.
+      Verificado end-to-end contra la URL de producción: / (redirige a
+      login), /login (200), /peluqueria-la-prueba (200, datos reales),
+      slug inexistente (404 de verdad), /api/cron/reminders (401 sin auth,
+      500 con auth+sin service role — esperado).
+- [ ] Conectar el repo a GitHub para deploys automáticos (hoy es CLI manual)
 - [ ] Dominio propio (decisión de Tomi; el subdominio .vercel.app vale
       para empezar)
 - [ ] Negocio demo: "Peluquería La Prueba" ya sirve; pulir datos antes de
