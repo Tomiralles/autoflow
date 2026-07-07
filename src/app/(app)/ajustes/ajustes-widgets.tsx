@@ -1,8 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Check, Copy, ExternalLink, Pencil, Plus } from "lucide-react";
+import {
+  Check,
+  Copy,
+  ExternalLink,
+  Image as ImageIcon,
+  Pencil,
+  Plus,
+  Upload,
+} from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,6 +28,7 @@ import { logout } from "@/app/(auth)/actions";
 import {
   crearServicio,
   editarServicio,
+  guardarApariencia,
   guardarNegocio,
   toggleServicio,
   type NegocioInput,
@@ -144,21 +154,341 @@ export function FormNegocio({
           onChange={(e) => set("description", e.target.value)}
         />
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="aj-color">Color principal</Label>
-        <div className="flex items-center gap-2 rounded-md border border-input px-3 py-2">
-          <input
-            id="aj-color"
-            type="color"
-            className="h-8 w-8 cursor-pointer rounded border-0"
-            value={form.primary_color}
-            onChange={(e) => set("primary_color", e.target.value)}
-          />
-          <span className="text-sm text-slate-600">{form.primary_color}</span>
-        </div>
-      </div>
       <Button onClick={guardar} disabled={pending || !form.name.trim()}>
         {pending ? "Guardando..." : "Guardar cambios"}
+      </Button>
+    </div>
+  );
+}
+
+// ---------- Apariencia ----------
+
+// Temas listos para usar. `primary` = color de botones y acentos;
+// `secondary` = fondo de la cabecera de la página pública.
+const TEMAS: {
+  nombre: string;
+  primary: string;
+  secondary: string;
+}[] = [
+  { nombre: "Azul", primary: "#2563EB", secondary: "#0F172A" },
+  { nombre: "Verde", primary: "#059669", secondary: "#052E2B" },
+  { nombre: "Coral", primary: "#F97316", secondary: "#431407" },
+  { nombre: "Púrpura", primary: "#7C3AED", secondary: "#2E1065" },
+  { nombre: "Rosa", primary: "#EC4899", secondary: "#4A044E" },
+  { nombre: "Grafito", primary: "#334155", secondary: "#0B1120" },
+];
+
+const MAX_IMG_BYTES = 3 * 1024 * 1024; // 3 MB, igual que el bucket
+
+export interface AparienciaInicial {
+  primary_color: string;
+  secondary_color: string;
+  logo_url: string | null;
+  hero_image_url: string | null;
+}
+
+export function FormApariencia({
+  businessId,
+  slug,
+  inicial,
+}: {
+  businessId: string;
+  slug: string;
+  inicial: AparienciaInicial;
+}) {
+  const [primary, setPrimary] = useState(inicial.primary_color);
+  const [secondary, setSecondary] = useState(inicial.secondary_color);
+  const [logoUrl, setLogoUrl] = useState(inicial.logo_url);
+  const [heroUrl, setHeroUrl] = useState(inicial.hero_image_url);
+  const [pending, startTransition] = useTransition();
+  const [subiendo, setSubiendo] = useState<"logo" | "hero" | null>(null);
+
+  const logoInput = useRef<HTMLInputElement>(null);
+  const heroInput = useRef<HTMLInputElement>(null);
+
+  // Guarda en la BD el estado que se le pase (evita depender del render).
+  const persistir = (next: AparienciaInicial) =>
+    new Promise<boolean>((resolve) =>
+      startTransition(async () => {
+        const r = await guardarApariencia(businessId, slug, next);
+        if (r.error) {
+          toast.error(r.error);
+          resolve(false);
+        } else {
+          resolve(true);
+        }
+      })
+    );
+
+  const aplicarTema = (t: (typeof TEMAS)[number]) => {
+    setPrimary(t.primary);
+    setSecondary(t.secondary);
+  };
+
+  const guardarColores = async () => {
+    const ok = await persistir({
+      primary_color: primary,
+      secondary_color: secondary,
+      logo_url: logoUrl,
+      hero_image_url: heroUrl,
+    });
+    if (ok) toast.success("Apariencia guardada");
+  };
+
+  const subir = async (kind: "logo" | "hero", file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("El archivo debe ser una imagen.");
+      return;
+    }
+    if (file.size > MAX_IMG_BYTES) {
+      toast.error("La imagen es muy grande (máx. 3 MB).");
+      return;
+    }
+    setSubiendo(kind);
+    try {
+      const supabase = createClient();
+      const ext = (file.name.split(".").pop() || "png").toLowerCase();
+      const path = `${businessId}/${kind}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("business-assets")
+        .upload(path, file, { contentType: file.type, upsert: false });
+      if (upErr) {
+        toast.error("No se pudo subir la imagen.");
+        return;
+      }
+      const { data } = supabase.storage
+        .from("business-assets")
+        .getPublicUrl(path);
+      const url = data.publicUrl;
+      const next: AparienciaInicial = {
+        primary_color: primary,
+        secondary_color: secondary,
+        logo_url: kind === "logo" ? url : logoUrl,
+        hero_image_url: kind === "hero" ? url : heroUrl,
+      };
+      const ok = await persistir(next);
+      if (ok) {
+        if (kind === "logo") setLogoUrl(url);
+        else setHeroUrl(url);
+        toast.success(kind === "logo" ? "Logo actualizado" : "Portada actualizada");
+      }
+    } finally {
+      setSubiendo(null);
+    }
+  };
+
+  const quitar = async (kind: "logo" | "hero") => {
+    const next: AparienciaInicial = {
+      primary_color: primary,
+      secondary_color: secondary,
+      logo_url: kind === "logo" ? null : logoUrl,
+      hero_image_url: kind === "hero" ? null : heroUrl,
+    };
+    const ok = await persistir(next);
+    if (ok) {
+      if (kind === "logo") setLogoUrl(null);
+      else setHeroUrl(null);
+      toast.success("Imagen quitada");
+    }
+  };
+
+  const temaActivo = (t: (typeof TEMAS)[number]) =>
+    t.primary.toLowerCase() === primary.toLowerCase() &&
+    t.secondary.toLowerCase() === secondary.toLowerCase();
+
+  return (
+    <div className="space-y-6">
+      {/* Temas */}
+      <div className="space-y-2">
+        <Label>Tema de color</Label>
+        <p className="text-xs text-slate-500">
+          Elige un estilo. Puedes afinarlo abajo.
+        </p>
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+          {TEMAS.map((t) => (
+            <button
+              key={t.nombre}
+              type="button"
+              onClick={() => aplicarTema(t)}
+              className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-2 transition-colors ${
+                temaActivo(t)
+                  ? "border-slate-900"
+                  : "border-slate-100 hover:border-slate-300"
+              }`}
+            >
+              <span
+                className="flex h-10 w-full items-center justify-center rounded-lg"
+                style={{ backgroundColor: t.secondary }}
+              >
+                <span
+                  className="h-4 w-4 rounded-full ring-2 ring-white/30"
+                  style={{ backgroundColor: t.primary }}
+                />
+              </span>
+              <span className="text-[11px] font-medium text-slate-600">
+                {t.nombre}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Logo */}
+      <div className="space-y-2">
+        <Label>Logo</Label>
+        <div className="flex items-center gap-3">
+          {logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoUrl}
+              alt="Logo"
+              className="h-16 w-16 rounded-2xl object-cover ring-1 ring-slate-200"
+            />
+          ) : (
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-100 text-slate-300">
+              <ImageIcon size={22} />
+            </div>
+          )}
+          <div className="flex flex-col gap-1.5">
+            <input
+              ref={logoInput}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) subir("logo", f);
+                e.target.value = "";
+              }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={subiendo === "logo" || pending}
+              onClick={() => logoInput.current?.click()}
+            >
+              <Upload size={14} />
+              {subiendo === "logo"
+                ? "Subiendo..."
+                : logoUrl
+                  ? "Cambiar logo"
+                  : "Subir logo"}
+            </Button>
+            {logoUrl && (
+              <button
+                type="button"
+                onClick={() => quitar("logo")}
+                disabled={pending}
+                className="text-left text-xs text-slate-400 hover:text-red-600"
+              >
+                Quitar
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Foto de portada */}
+      <div className="space-y-2">
+        <Label>Foto de portada</Label>
+        <p className="text-xs text-slate-500">
+          Se ve de fondo en la cabecera de tu página de reservas.
+        </p>
+        {heroUrl ? (
+          <div className="relative overflow-hidden rounded-xl ring-1 ring-slate-200">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={heroUrl}
+              alt="Portada"
+              className="h-28 w-full object-cover"
+            />
+          </div>
+        ) : (
+          <div className="flex h-28 w-full items-center justify-center rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-300">
+            <ImageIcon size={26} />
+          </div>
+        )}
+        <div className="flex items-center gap-3">
+          <input
+            ref={heroInput}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) subir("hero", f);
+              e.target.value = "";
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={subiendo === "hero" || pending}
+            onClick={() => heroInput.current?.click()}
+          >
+            <Upload size={14} />
+            {subiendo === "hero"
+              ? "Subiendo..."
+              : heroUrl
+                ? "Cambiar portada"
+                : "Subir portada"}
+          </Button>
+          {heroUrl && (
+            <button
+              type="button"
+              onClick={() => quitar("hero")}
+              disabled={pending}
+              className="text-xs text-slate-400 hover:text-red-600"
+            >
+              Quitar
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Ajuste fino de colores */}
+      <div className="space-y-3 rounded-xl bg-slate-50 p-4">
+        <p className="text-xs font-medium text-slate-500">
+          ¿Quieres afinar los colores?
+        </p>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="ap-primary" className="text-xs">
+              Color principal
+            </Label>
+            <div className="flex items-center gap-2 rounded-md border border-input bg-white px-3 py-2">
+              <input
+                id="ap-primary"
+                type="color"
+                className="h-7 w-7 cursor-pointer rounded border-0 bg-transparent"
+                value={primary}
+                onChange={(e) => setPrimary(e.target.value)}
+              />
+              <span className="text-xs text-slate-600">{primary}</span>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="ap-secondary" className="text-xs">
+              Color de cabecera
+            </Label>
+            <div className="flex items-center gap-2 rounded-md border border-input bg-white px-3 py-2">
+              <input
+                id="ap-secondary"
+                type="color"
+                className="h-7 w-7 cursor-pointer rounded border-0 bg-transparent"
+                value={secondary}
+                onChange={(e) => setSecondary(e.target.value)}
+              />
+              <span className="text-xs text-slate-600">{secondary}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Button onClick={guardarColores} disabled={pending}>
+        {pending ? "Guardando..." : "Guardar apariencia"}
       </Button>
     </div>
   );

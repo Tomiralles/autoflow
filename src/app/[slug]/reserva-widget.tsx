@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState, useTransition } from "react";
-import { Check, ChevronLeft, Clock } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import {
   generarHuecos,
   horarioDelDia as horarioDelDiaLib,
@@ -66,6 +66,7 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
 
   const color = business.primary_color || "#3B82F6";
   const dias = useMemo(() => proximosDias(14), []);
+  const pasoNum = paso === "servicio" ? 1 : paso === "calendario" ? 2 : 3;
 
   const horarioDelDia = useCallback(
     (iso: string): DayHours => horarioDelDiaLib(iso, business.working_hours),
@@ -118,13 +119,37 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
 
   return (
     <div className="mx-auto max-w-md space-y-4 px-5 py-6">
-      {paso !== "servicio" && paso !== "exito" && (
-        <button
-          onClick={() => setPaso(paso === "datos" ? "calendario" : "servicio")}
-          className="flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-700"
-        >
-          <ChevronLeft size={16} /> Atrás
-        </button>
+      {paso !== "exito" && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            {paso !== "servicio" ? (
+              <button
+                onClick={() =>
+                  setPaso(paso === "datos" ? "calendario" : "servicio")
+                }
+                className="flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-700"
+              >
+                <ChevronLeft size={16} /> Atrás
+              </button>
+            ) : (
+              <span className="text-sm font-medium text-slate-400">
+                Reserva tu cita
+              </span>
+            )}
+            <span className="text-xs font-semibold text-slate-400">
+              Paso {pasoNum} de 3
+            </span>
+          </div>
+          <div className="flex gap-1.5">
+            {[1, 2, 3].map((n) => (
+              <div
+                key={n}
+                className="h-1.5 flex-1 rounded-full transition-colors"
+                style={{ backgroundColor: n <= pasoNum ? color : "#e2e8f0" }}
+              />
+            ))}
+          </div>
+        </div>
       )}
 
       {paso === "servicio" && (
@@ -144,27 +169,38 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
                   setHora(null);
                   setPaso("calendario");
                 }}
-                className="w-full rounded-2xl border border-slate-100 bg-white p-5 text-left shadow-sm transition-all hover:shadow-md"
+                className="group flex w-full items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-200 hover:shadow-md"
               >
-                <p className="font-bold text-slate-900">{s.name}</p>
-                {s.description && (
-                  <p className="mt-0.5 line-clamp-2 text-sm text-slate-500">
-                    {s.description}
-                  </p>
-                )}
-                <div className="mt-2 flex items-center gap-3">
-                  {business.show_prices && (s.price ?? 0) > 0 && (
-                    <span className="text-sm font-bold" style={{ color }}>
-                      {s.price}€
-                    </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-bold text-slate-900">{s.name}</p>
+                  {s.description && (
+                    <p className="mt-0.5 line-clamp-2 text-sm text-slate-500">
+                      {s.description}
+                    </p>
                   )}
-                  {s.duration_minutes && (
-                    <span className="flex items-center gap-1 text-xs text-slate-400">
-                      <Clock size={11} />
-                      {s.duration_minutes} min
-                    </span>
-                  )}
+                  <div className="mt-2 flex items-center gap-2">
+                    {business.show_prices && (s.price ?? 0) > 0 && (
+                      <span
+                        className="rounded-full px-2 py-0.5 text-xs font-bold"
+                        style={{ backgroundColor: `${color}15`, color }}
+                      >
+                        {s.price}€
+                      </span>
+                    )}
+                    {s.duration_minutes && (
+                      <span className="flex items-center gap-1 text-xs text-slate-400">
+                        <Clock size={11} />
+                        {s.duration_minutes} min
+                      </span>
+                    )}
+                  </div>
                 </div>
+                <span
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-300 transition-colors group-hover:text-slate-500"
+                  style={{ backgroundColor: `${color}0d` }}
+                >
+                  <ChevronRight size={18} />
+                </span>
               </button>
             ))
           )}

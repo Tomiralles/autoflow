@@ -110,10 +110,10 @@ export default function OnboardingPage() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-slate-50 p-4">
       <div className="w-full max-w-lg">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-600 text-2xl">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-coral text-2xl shadow-sm">
             ⚡
           </div>
-          <h1 className="text-2xl font-bold text-slate-900">
+          <h1 className="text-2xl font-bold text-brand-ink">
             Bienvenido a AutoFlow AI
           </h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -129,7 +129,7 @@ export default function OnboardingPage() {
               <div
                 className={`rounded-xl px-3 py-2 text-xs font-semibold transition-all ${
                   i === step
-                    ? "bg-blue-600 text-white"
+                    ? "bg-coral text-coral-fg"
                     : i < step
                       ? "bg-green-100 text-green-700"
                       : "bg-slate-100 text-slate-500"
@@ -200,7 +200,7 @@ export default function OnboardingPage() {
                       onClick={() => updateBiz("sector", s.id)}
                       className={`rounded-xl border-2 px-3 py-2.5 text-left text-sm font-medium transition-all ${
                         biz.sector === s.id
-                          ? "border-blue-500 bg-blue-50 text-blue-700"
+                          ? "border-coral bg-coral-soft text-coral"
                           : "border-slate-200 text-slate-700 hover:border-slate-300"
                       }`}
                     >
@@ -326,7 +326,7 @@ export default function OnboardingPage() {
                 onClick={() =>
                   setServices((prev) => [...prev, { ...SERVICIO_VACIO }])
                 }
-                className="w-full rounded-xl border-2 border-dashed border-slate-300 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:border-blue-300 hover:text-blue-600"
+                className="w-full rounded-xl border-2 border-dashed border-slate-300 py-2.5 text-sm font-medium text-slate-500 transition-colors hover:border-coral hover:text-coral"
               >
                 + Añadir otro servicio
               </button>

@@ -97,8 +97,8 @@ export default async function HoyPage() {
       label: "Clientes activos",
       value: String(leadsRes.count ?? 0),
       icon: Users,
-      color: "text-blue-600",
-      bg: "bg-blue-50",
+      color: "text-coral",
+      bg: "bg-coral-soft",
     },
     {
       label: "Ingresos del mes",
@@ -200,12 +200,12 @@ export default async function HoyPage() {
         <div className="rounded-xl border border-slate-100 bg-white shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 p-5">
             <div className="flex items-center gap-2">
-              <CalendarDays size={18} className="text-blue-500" />
+              <CalendarDays size={18} className="text-brand" />
               <h2 className="font-bold text-slate-900">Citas de hoy</h2>
             </div>
             <Link
               href="/citas"
-              className="text-sm font-medium text-blue-600 hover:underline"
+              className="text-sm font-medium text-coral hover:underline"
             >
               Ver agenda
             </Link>
@@ -230,23 +230,23 @@ export default async function HoyPage() {
       </div>
 
       {/* El producto vende tranquilidad: la automatización se ve trabajando */}
-      <div className="flex items-center justify-between rounded-xl bg-blue-600 p-5">
+      <div className="flex items-center justify-between rounded-2xl bg-brand p-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20">
-            <Zap size={20} className="text-white" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-coral">
+            <Zap size={20} className="text-coral-fg" />
           </div>
           <div>
             <p className="font-bold text-white">
               {autosRes.count ?? 0} automatizaciones activas
             </p>
-            <p className="text-sm text-blue-200">
+            <p className="text-sm text-slate-300">
               Trabajando por ti mientras te concentras en tu faena
             </p>
           </div>
         </div>
         <Link
           href="/automatico"
-          className="rounded-lg bg-white px-4 py-2 text-sm font-semibold text-blue-700 transition-colors hover:bg-blue-50"
+          className="rounded-xl bg-coral px-4 py-2 text-sm font-semibold text-coral-fg transition-colors hover:bg-coral-hover"
         >
           Gestionar
         </Link>

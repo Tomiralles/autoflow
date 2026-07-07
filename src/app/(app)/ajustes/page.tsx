@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   BotonSalir,
   FilaServicio,
+  FormApariencia,
   FormNegocio,
   NuevoServicioDialog,
   type ServicioRow,
@@ -22,7 +23,7 @@ export default async function AjustesPage() {
   const protocolo = host.startsWith("localhost") ? "http" : "https";
   const origen = `${protocolo}://${host}`;
 
-  const [serviciosRes, perfilRes] = await Promise.all([
+  const [serviciosRes, perfilRes, aparienciaRes] = await Promise.all([
     supabase
       .from("services")
       .select(
@@ -31,10 +32,20 @@ export default async function AjustesPage() {
       .eq("business_id", business.id)
       .order("sort_order"),
     supabase.from("profiles").select("role").single(),
+    supabase
+      .from("businesses")
+      .select("secondary_color, logo_url, hero_image_url")
+      .eq("id", business.id)
+      .single(),
   ]);
 
   const servicios = (serviciosRes.data ?? []) as ServicioRow[];
   const esAdmin = perfilRes.data?.role === "admin";
+  const apariencia = aparienciaRes.data as {
+    secondary_color: string | null;
+    logo_url: string | null;
+    hero_image_url: string | null;
+  } | null;
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-6">
@@ -49,7 +60,7 @@ export default async function AjustesPage() {
           {esAdmin && (
             <Link
               href="/admin"
-              className="text-sm font-medium text-blue-600 hover:underline"
+              className="text-sm font-medium text-coral hover:underline"
             >
               Administración
             </Link>
@@ -72,7 +83,23 @@ export default async function AjustesPage() {
             email: business.email ?? "",
             address: business.address ?? "",
             description: business.description ?? "",
+          }}
+        />
+      </div>
+
+      <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+        <h2 className="mb-1 text-sm font-bold text-slate-700">Apariencia</h2>
+        <p className="mb-4 text-xs text-slate-500">
+          Personaliza cómo ven tu página de reservas los clientes
+        </p>
+        <FormApariencia
+          businessId={business.id}
+          slug={business.slug}
+          inicial={{
             primary_color: business.primary_color,
+            secondary_color: apariencia?.secondary_color ?? "#0F172A",
+            logo_url: apariencia?.logo_url ?? null,
+            hero_image_url: apariencia?.hero_image_url ?? null,
           }}
         />
       </div>

@@ -10,7 +10,7 @@ export default async function AppLayout({
   return (
     <div className="min-h-screen bg-slate-50">
       <AppNav businessName={business.name} />
-      <main className="pb-20 md:pb-6 md:pl-56">{children}</main>
+      <main className="pb-20 md:pb-6 md:pl-60">{children}</main>
     </div>
   );
 }

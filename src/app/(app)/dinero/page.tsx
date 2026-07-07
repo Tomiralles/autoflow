@@ -73,8 +73,8 @@ export default async function DineroPage() {
       label: "Beneficio",
       value: `${beneficio.toLocaleString("es")}€`,
       icon: Wallet,
-      color: beneficio >= 0 ? "text-blue-600" : "text-red-600",
-      bg: beneficio >= 0 ? "bg-blue-50" : "bg-red-50",
+      color: beneficio >= 0 ? "text-brand" : "text-red-600",
+      bg: beneficio >= 0 ? "bg-brand-soft" : "bg-red-50",
     },
   ];
 
@@ -84,7 +84,7 @@ export default async function DineroPage() {
         <h1 className="text-2xl font-bold text-slate-900">Dinero</h1>
         <p className="mt-1 text-sm text-slate-500">
           Facturas y gastos ·{" "}
-          <Link href="/hoy" className="text-blue-600 hover:underline">
+          <Link href="/hoy" className="text-coral hover:underline">
             volver al panel
           </Link>
         </p>

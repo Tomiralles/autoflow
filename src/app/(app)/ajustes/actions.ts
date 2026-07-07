@@ -14,7 +14,6 @@ export interface NegocioInput {
   email: string;
   address: string;
   description: string;
-  primary_color: string;
 }
 
 export async function guardarNegocio(
@@ -32,13 +31,44 @@ export async function guardarNegocio(
       email: input.email.trim() || null,
       address: input.address.trim() || null,
       description: input.description.trim() || null,
-      primary_color: input.primary_color,
     })
     .eq("id", businessId);
   if (error) return { error: "No se pudieron guardar los cambios." };
 
   revalidatePath("/ajustes");
   revalidatePath("/hoy");
+  return { ok: true };
+}
+
+// ---------- Apariencia (colores + imágenes de la página pública) ----------
+
+export interface AparienciaInput {
+  primary_color: string;
+  secondary_color: string;
+  logo_url: string | null;
+  hero_image_url: string | null;
+}
+
+export async function guardarApariencia(
+  businessId: string,
+  slug: string,
+  input: AparienciaInput
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("businesses")
+    .update({
+      primary_color: input.primary_color,
+      secondary_color: input.secondary_color,
+      logo_url: input.logo_url,
+      hero_image_url: input.hero_image_url,
+    })
+    .eq("id", businessId);
+  if (error) return { error: "No se pudo guardar la apariencia." };
+
+  revalidatePath("/ajustes");
+  revalidatePath("/hoy");
+  revalidatePath(`/${slug}`);
   return { ok: true };
 }
 

@@ -184,7 +184,7 @@ function LlamadaDialog({ cliente }: { cliente: ClienteRow }) {
       <DialogTrigger asChild>
         <button
           title="Registrar llamada"
-          className="shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-blue-50 hover:text-blue-600"
+          className="shrink-0 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-coral-soft hover:text-coral"
         >
           <Phone size={15} />
         </button>
@@ -202,7 +202,7 @@ function LlamadaDialog({ cliente }: { cliente: ClienteRow }) {
                 onClick={() => setResultado(r.id)}
                 className={`rounded-xl border-2 px-3 py-2.5 text-sm font-medium transition-all ${
                   resultado === r.id
-                    ? "border-blue-500 bg-blue-50 text-blue-700"
+                    ? "border-coral bg-coral-soft text-coral"
                     : "border-slate-200 text-slate-700 hover:border-slate-300"
                 }`}
               >

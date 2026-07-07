@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { MapPin, Phone } from "lucide-react";
+import { BellRing, CalendarCheck, Clock3, MapPin, Phone } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ReservaWidget, type PublicBusiness } from "./reserva-widget";
 
@@ -56,40 +56,95 @@ export default async function PublicPage({ params }: PageProps) {
 
   const settings = biz.public_page_settings ?? {};
   const secundario = biz.secondary_color || "#0F172A";
+  const color = biz.primary_color || "#3B82F6";
   const social = (settings.show_social !== false && biz.social_links) || null;
+  const mostrarHero = settings.show_hero !== false;
+  const heroImg = mostrarHero ? biz.hero_image_url : null;
 
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Cabecera con la identidad del negocio */}
-      <div style={{ backgroundColor: secundario }} className="px-5 py-8 text-center">
-        {settings.show_hero !== false && biz.logo_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={biz.logo_url}
-            alt={biz.name}
-            className="mx-auto mb-3 h-16 w-16 rounded-2xl object-cover"
-          />
+      <header
+        style={{ backgroundColor: secundario }}
+        className="relative overflow-hidden rounded-b-[2rem] px-5 pb-12 pt-10 text-center shadow-sm"
+      >
+        {heroImg && (
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={heroImg}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                background: `linear-gradient(to bottom, ${secundario}cc, ${secundario}f2)`,
+              }}
+            />
+          </>
         )}
-        <h1 className="text-2xl font-bold text-white">{biz.name}</h1>
-        {biz.description && (
-          <p className="mx-auto mt-1 max-w-sm text-sm text-white/70">
-            {biz.description}
-          </p>
-        )}
-        <div className="mt-3 flex items-center justify-center gap-4 text-xs text-white/70">
-          {settings.show_phone !== false && biz.phone && (
-            <a
-              href={`tel:${biz.phone}`}
-              className="flex items-center gap-1 hover:text-white"
+        <div className="relative">
+          {mostrarHero && biz.logo_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={biz.logo_url}
+              alt={biz.name}
+              className="mx-auto mb-4 h-20 w-20 rounded-2xl object-cover ring-4 ring-white/20"
+            />
+          )}
+          <h1 className="text-3xl font-bold tracking-tight text-white">
+            {biz.name}
+          </h1>
+          {biz.description && (
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-white/75">
+              {biz.description}
+            </p>
+          )}
+          {((settings.show_phone !== false && biz.phone) ||
+            (settings.show_address !== false && biz.address)) && (
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              {settings.show_phone !== false && biz.phone && (
+                <a
+                  href={`tel:${biz.phone}`}
+                  className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/20"
+                >
+                  <Phone size={12} /> {biz.phone}
+                </a>
+              )}
+              {settings.show_address !== false && biz.address && (
+                <span className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white/90 backdrop-blur-sm">
+                  <MapPin size={12} /> {biz.address}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* Banda de confianza — tranquiliza al cliente y luce la automatización */}
+      <div className="mx-auto -mt-6 max-w-md px-5">
+        <div className="flex items-stretch justify-between gap-2 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm">
+          {[
+            { icon: CalendarCheck, label: "Confirmación\nal momento" },
+            { icon: BellRing, label: "Te recordamos\ntu cita" },
+            { icon: Clock3, label: "Reservas\nen 1 minuto" },
+          ].map(({ icon: Icon, label }) => (
+            <div
+              key={label}
+              className="flex flex-1 flex-col items-center gap-1.5 text-center"
             >
-              <Phone size={12} /> {biz.phone}
-            </a>
-          )}
-          {settings.show_address !== false && biz.address && (
-            <span className="flex items-center gap-1">
-              <MapPin size={12} /> {biz.address}
-            </span>
-          )}
+              <span
+                className="flex h-9 w-9 items-center justify-center rounded-full"
+                style={{ backgroundColor: `${color}15`, color }}
+              >
+                <Icon size={17} />
+              </span>
+              <span className="whitespace-pre-line text-[11px] font-medium leading-tight text-slate-600">
+                {label}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -132,8 +187,8 @@ export default async function PublicPage({ params }: PageProps) {
         </div>
       )}
 
-      <p className="pb-6 text-center text-[11px] text-slate-300">
-        Reservas con AutoFlow AI
+      <p className="pb-8 text-center text-[11px] text-slate-300">
+        Reservas con <span className="font-semibold text-slate-400">AutoFlow AI</span>
       </p>
     </div>
   );

@@ -71,7 +71,7 @@ export default function RegistroPage() {
               ¿Ya tienes cuenta?{" "}
               <Link
                 href="/login"
-                className="font-semibold text-blue-600 hover:underline"
+                className="font-semibold text-coral hover:underline"
               >
                 Inicia sesión
               </Link>

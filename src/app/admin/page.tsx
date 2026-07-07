@@ -29,7 +29,7 @@ export default async function AdminPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900">
-            <ShieldCheck size={24} className="text-blue-600" />
+            <ShieldCheck size={24} className="text-coral" />
             Administración
           </h1>
           <p className="mt-1 text-sm text-slate-500">
@@ -39,7 +39,7 @@ export default async function AdminPage() {
         </div>
         <Link
           href="/hoy"
-          className="text-sm font-medium text-blue-600 hover:underline"
+          className="text-sm font-medium text-coral hover:underline"
         >
           ← Volver a la app
         </Link>

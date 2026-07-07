@@ -50,7 +50,7 @@ export default function LoginPage() {
           ¿No tienes cuenta?{" "}
           <Link
             href="/registro"
-            className="font-semibold text-blue-600 hover:underline"
+            className="font-semibold text-coral hover:underline"
           >
             Regístrate
           </Link>
