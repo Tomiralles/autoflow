@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Pencil, Plus } from "lucide-react";
+import { Check, Copy, ExternalLink, Pencil, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -25,16 +25,56 @@ import {
   type ServicioInput,
 } from "./actions";
 
+// ---------- URL pública ----------
+
+// El origen (protocolo+dominio) lo calcula el servidor a partir del host
+// real de la petición (ver ajustes/page.tsx) — así no depende de
+// NEXT_PUBLIC_APP_URL ni hay riesgo de desajuste en la hidratación.
+function UrlPublica({ url }: { url: string }) {
+  const [copiado, setCopiado] = useState(false);
+
+  const copiar = async () => {
+    await navigator.clipboard.writeText(url);
+    setCopiado(true);
+    toast.success("Enlace copiado");
+    setTimeout(() => setCopiado(false), 2000);
+  };
+
+  return (
+    <div className="flex items-center gap-2">
+      <p className="min-w-0 flex-1 truncate rounded-md border bg-slate-50 px-3 py-2 text-sm text-slate-700">
+        {url}
+      </p>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        onClick={copiar}
+        title="Copiar enlace"
+      >
+        {copiado ? <Check size={15} /> : <Copy size={15} />}
+      </Button>
+      <Button type="button" variant="outline" size="icon" asChild>
+        <a href={url} target="_blank" rel="noopener noreferrer" title="Ver página">
+          <ExternalLink size={15} />
+        </a>
+      </Button>
+    </div>
+  );
+}
+
 // ---------- Datos del negocio ----------
 
 export function FormNegocio({
   businessId,
   inicial,
   slug,
+  origen,
 }: {
   businessId: string;
   inicial: NegocioInput;
   slug: string;
+  origen: string;
 }) {
   const [form, setForm] = useState(inicial);
   const [pending, startTransition] = useTransition();
@@ -59,10 +99,11 @@ export function FormNegocio({
         />
       </div>
       <div className="space-y-2">
-        <Label>URL pública</Label>
-        <p className="rounded-md border bg-slate-50 px-3 py-2 text-sm text-slate-500">
-          /{slug}
+        <Label>Tu página de reservas</Label>
+        <p className="text-xs text-slate-500">
+          Compártela con tus clientes: Instagram, WhatsApp, un cartel...
         </p>
+        <UrlPublica url={`${origen}/${slug}`} />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">

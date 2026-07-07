@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { getBusinessOrRedirect } from "@/lib/business";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -12,6 +13,14 @@ import {
 export default async function AjustesPage() {
   const business = await getBusinessOrRedirect();
   const supabase = await createClient();
+
+  // Origen real de la petición: funciona en local, en el subdominio
+  // .vercel.app y con cualquier dominio propio que se añada más adelante,
+  // sin depender de que NEXT_PUBLIC_APP_URL esté puesta o al día.
+  const headerList = await headers();
+  const host = headerList.get("host") ?? "localhost:3000";
+  const protocolo = host.startsWith("localhost") ? "http" : "https";
+  const origen = `${protocolo}://${host}`;
 
   const [serviciosRes, perfilRes] = await Promise.all([
     supabase
@@ -56,6 +65,7 @@ export default async function AjustesPage() {
         <FormNegocio
           businessId={business.id}
           slug={business.slug}
+          origen={origen}
           inicial={{
             name: business.name,
             phone: business.phone ?? "",
