@@ -28,7 +28,14 @@ interface PublicPayload extends Omit<PublicBusiness, "show_prices"> {
 
 async function getPublicBusiness(slug: string): Promise<PublicPayload | null> {
   const supabase = await createClient();
-  const { data } = await supabase.rpc("get_public_business", { p_slug: slug });
+  const { data, error } = await supabase.rpc("get_public_business", {
+    p_slug: slug,
+  });
+  if (error) {
+    // Un fallo real (Supabase caído, env var mal puesta) no debe
+    // confundirse con "este negocio no existe" — que quede en logs.
+    console.error(`[pagina publica] RPC get_public_business falló para "${slug}":`, error);
+  }
   return data as PublicPayload | null;
 }
 
