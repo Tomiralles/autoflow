@@ -25,6 +25,10 @@ export default async function AjustesPage() {
   const protocolo = host.startsWith("localhost") ? "http" : "https";
   const origen = `${protocolo}://${host}`;
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const [serviciosRes, perfilRes, aparienciaRes] = await Promise.all([
     supabase
       .from("services")
@@ -33,7 +37,9 @@ export default async function AjustesPage() {
       )
       .eq("business_id", business.id)
       .order("sort_order"),
-    supabase.from("profiles").select("role").single(),
+    // Filtrar por id es imprescindible: un admin ve TODOS los perfiles por
+    // RLS, y sin el eq() el .single() falla justo para los admins.
+    supabase.from("profiles").select("role").eq("id", user!.id).single(),
     supabase
       .from("businesses")
       .select("secondary_color, logo_url, hero_image_url, working_hours")

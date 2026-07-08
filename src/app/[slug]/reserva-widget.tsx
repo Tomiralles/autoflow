@@ -6,6 +6,7 @@ import {
   filtrarHuecosLibres,
   generarHuecos,
   horarioDelDia as horarioDelDiaLib,
+  sinHuecosPasados,
   type DayHours,
   type Ocupacion,
 } from "@/lib/slots";
@@ -91,8 +92,16 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
     if (!h.open) return [];
     const duracion = servicio?.duration_minutes || 60;
     const todos = generarHuecos(h.start || "09:00", h.end || "19:00", duracion);
-    return filtrarHuecosLibres(todos, duracion, ocupadas);
-  }, [fecha, ocupadas, servicio, horarioDelDia]);
+    const libres = filtrarHuecosLibres(todos, duracion, ocupadas);
+    // Si el día elegido es hoy, las horas que ya pasaron no se ofrecen
+    const ahora = new Intl.DateTimeFormat("es-ES", {
+      timeZone: "Europe/Madrid",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    }).format(new Date());
+    return sinHuecosPasados(libres, fecha === dias[0].iso, ahora);
+  }, [fecha, ocupadas, servicio, horarioDelDia, dias]);
 
   const confirmarReserva = () =>
     startTransition(async () => {

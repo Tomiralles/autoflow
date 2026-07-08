@@ -46,6 +46,17 @@ export function filtrarHuecosLibres(
   });
 }
 
+// Para el día de HOY, quita los huecos cuya hora ya pasó. `ahora` es la
+// hora actual "HH:MM" en la zona del negocio (Europe/Madrid).
+export function sinHuecosPasados(
+  candidatos: string[],
+  esHoy: boolean,
+  ahora: string
+): string[] {
+  if (!esHoy) return candidatos;
+  return candidatos.filter((t) => t > ahora);
+}
+
 export function generarHuecos(
   start: string,
   end: string,

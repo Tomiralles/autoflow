@@ -1,5 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { filtrarHuecosLibres, generarHuecos, horarioDelDia } from "@/lib/slots";
+import {
+  filtrarHuecosLibres,
+  generarHuecos,
+  horarioDelDia,
+  sinHuecosPasados,
+} from "@/lib/slots";
+
+describe("sinHuecosPasados", () => {
+  const huecos = ["09:00", "11:00", "13:00", "15:00", "17:00"];
+
+  it("si no es hoy, no filtra nada", () => {
+    expect(sinHuecosPasados(huecos, false, "17:30")).toEqual(huecos);
+  });
+
+  it("si es hoy, quita las horas ya pasadas", () => {
+    expect(sinHuecosPasados(huecos, true, "12:00")).toEqual([
+      "13:00",
+      "15:00",
+      "17:00",
+    ]);
+  });
+
+  it("la hora exacta actual tampoco se ofrece", () => {
+    expect(sinHuecosPasados(huecos, true, "13:00")).toEqual([
+      "15:00",
+      "17:00",
+    ]);
+  });
+
+  it("si ya pasaron todas, no queda ninguna", () => {
+    expect(sinHuecosPasados(huecos, true, "20:00")).toEqual([]);
+  });
+});
 
 describe("generarHuecos", () => {
   it("genera huecos de 60 min de 9 a 19 (el último empieza a las 18)", () => {
