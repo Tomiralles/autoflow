@@ -117,26 +117,6 @@ export async function solicitarRecuperacion(
   };
 }
 
-export async function restablecerPassword(
-  _prev: AuthState,
-  formData: FormData
-): Promise<AuthState> {
-  const password = String(formData.get("password") ?? "");
-  if (password.length < 8) {
-    return { error: "La contraseña debe tener al menos 8 caracteres." };
-  }
-
-  const supabase = await createClient();
-  const { error } = await supabase.auth.updateUser({ password });
-  if (error) {
-    return {
-      error: "No se pudo cambiar la contraseña. Pide un nuevo enlace desde /recuperar.",
-    };
-  }
-
-  redirect(await destinoTrasLogin());
-}
-
 export async function logout(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();
