@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import type { Horario } from "@/components/horario-editor";
 
 export interface ActionResult {
   ok?: true;
@@ -37,6 +38,25 @@ export async function guardarNegocio(
 
   revalidatePath("/ajustes");
   revalidatePath("/hoy");
+  return { ok: true };
+}
+
+// ---------- Horario de apertura ----------
+
+export async function guardarHorario(
+  businessId: string,
+  slug: string,
+  horario: Horario
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("businesses")
+    .update({ working_hours: horario })
+    .eq("id", businessId);
+  if (error) return { error: "No se pudo guardar el horario." };
+
+  revalidatePath("/ajustes");
+  revalidatePath(`/${slug}`);
   return { ok: true };
 }
 

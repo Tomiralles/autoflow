@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Check, Copy, ExternalLink } from "lucide-react";
 import {
   crearNegocio,
   completarOnboarding,
@@ -13,6 +14,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { TEMAS } from "@/lib/temas";
+import {
+  HorarioEditor,
+  HORARIO_POR_DEFECTO,
+  type Horario,
+} from "@/components/horario-editor";
 
 const SECTORS = [
   { id: "estetica", label: "💆 Clínica / Estética" },
@@ -54,8 +61,10 @@ export default function OnboardingPage() {
     slug: "",
     sector: "servicios",
     phone: "",
-    primary_color: "#3B82F6",
+    primary_color: TEMAS[0].primary,
+    secondary_color: TEMAS[0].secondary,
   });
+  const [horario, setHorario] = useState<Horario>(HORARIO_POR_DEFECTO);
   const [services, setServices] = useState<ServiceInput[]>([
     { ...SERVICIO_VACIO },
   ]);
@@ -67,7 +76,7 @@ export default function OnboardingPage() {
     setSaving(true);
     setSlugError("");
     try {
-      const result = await crearNegocio(biz);
+      const result = await crearNegocio({ ...biz, working_hours: horario });
       if (result.slugTaken) {
         setSlugError("Esta URL ya está en uso. Elige otra.");
       } else if (result.error) {
@@ -220,19 +229,52 @@ export default function OnboardingPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="color">Color principal</Label>
-                <div className="flex items-center gap-2 rounded-md border border-input px-3 py-2">
-                  <input
-                    id="color"
-                    type="color"
-                    className="h-8 w-8 cursor-pointer rounded border-0"
-                    value={biz.primary_color}
-                    onChange={(e) => updateBiz("primary_color", e.target.value)}
-                  />
-                  <span className="text-sm text-slate-600">
-                    {biz.primary_color}
-                  </span>
+                <Label>Tema de color</Label>
+                <p className="text-xs text-slate-500">
+                  Así se verá tu página de reservas. Puedes cambiarlo cuando
+                  quieras.
+                </p>
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                  {TEMAS.map((t) => {
+                    const activo = biz.primary_color === t.primary;
+                    return (
+                      <button
+                        key={t.nombre}
+                        type="button"
+                        onClick={() => {
+                          updateBiz("primary_color", t.primary);
+                          updateBiz("secondary_color", t.secondary);
+                        }}
+                        className={`flex flex-col items-center gap-1.5 rounded-xl border-2 p-2 transition-colors ${
+                          activo
+                            ? "border-slate-900"
+                            : "border-slate-100 hover:border-slate-300"
+                        }`}
+                      >
+                        <span
+                          className="flex h-10 w-full items-center justify-center rounded-lg"
+                          style={{ backgroundColor: t.secondary }}
+                        >
+                          <span
+                            className="h-4 w-4 rounded-full ring-2 ring-white/30"
+                            style={{ backgroundColor: t.primary }}
+                          />
+                        </span>
+                        <span className="text-[11px] font-medium text-slate-600">
+                          {t.nombre}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Horario de apertura</Label>
+                <p className="text-xs text-slate-500">
+                  Por defecto: lunes a sábado de 9:00 a 19:00, domingo
+                  cerrado. Cámbialo si el tuyo es distinto.
+                </p>
+                <HorarioEditor value={horario} onChange={setHorario} />
               </div>
               <Button
                 className="w-full"
@@ -346,28 +388,75 @@ export default function OnboardingPage() {
           </Card>
         )}
 
-        {step === 2 && (
-          <Card>
-            <CardContent className="space-y-5 pt-8 pb-8 text-center">
-              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100 text-4xl">
-                ✓
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-slate-900">
-                  ¡Tu negocio está listo!
-                </h2>
-                <p className="mt-2 text-sm text-slate-500">
-                  Tus recordatorios y seguimientos automáticos ya están
-                  activados. Tu página pública estará en /{biz.slug}.
-                </p>
-              </div>
-              <Button className="w-full" onClick={() => router.push("/hoy")}>
-                Ir a mi panel →
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        {step === 2 && <PasoFinal slug={biz.slug} router={router} />}
       </div>
     </main>
+  );
+}
+
+// Momento de venta: el dueño acaba de configurar su negocio y es el
+// instante ideal para que copie/comparta su enlace (Instagram, WhatsApp).
+function PasoFinal({
+  slug,
+  router,
+}: {
+  slug: string;
+  router: ReturnType<typeof useRouter>;
+}) {
+  const [copiado, setCopiado] = useState(false);
+  const url =
+    typeof window !== "undefined" ? `${window.location.origin}/${slug}` : "";
+
+  const copiar = async () => {
+    await navigator.clipboard.writeText(url);
+    setCopiado(true);
+    toast.success("Enlace copiado");
+    setTimeout(() => setCopiado(false), 2000);
+  };
+
+  return (
+    <Card>
+      <CardContent className="space-y-5 pt-8 pb-8 text-center">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-green-100 text-4xl">
+          ✓
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-slate-900">
+            ¡Tu negocio está listo!
+          </h2>
+          <p className="mt-2 text-sm text-slate-500">
+            Tus recordatorios y seguimientos automáticos ya están activados.
+          </p>
+        </div>
+        <div className="space-y-2 text-left">
+          <Label>Tu página de reservas</Label>
+          <p className="text-xs text-slate-500">
+            Compártela en Instagram, WhatsApp o un cartel del local.
+          </p>
+          <div className="flex items-center gap-2">
+            <p className="min-w-0 flex-1 truncate rounded-md border bg-slate-50 px-3 py-2 text-sm text-slate-700">
+              {url}
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={copiar}
+              title="Copiar enlace"
+            >
+              {copiado ? <Check size={15} /> : <Copy size={15} />}
+            </Button>
+            <Button type="button" variant="outline" size="icon" asChild>
+              <a href={url} target="_blank" rel="noopener noreferrer" title="Ver página">
+                <ExternalLink size={15} />
+              </a>
+            </Button>
+          </div>
+        </div>
+        <Button className="w-full" onClick={() => router.push("/hoy")}>
+          Ir a mi panel →
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

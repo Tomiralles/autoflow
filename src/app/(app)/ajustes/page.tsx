@@ -6,10 +6,12 @@ import {
   BotonSalir,
   FilaServicio,
   FormApariencia,
+  FormHorario,
   FormNegocio,
   NuevoServicioDialog,
   type ServicioRow,
 } from "./ajustes-widgets";
+import type { Horario } from "@/components/horario-editor";
 
 export default async function AjustesPage() {
   const business = await getBusinessOrRedirect();
@@ -34,7 +36,7 @@ export default async function AjustesPage() {
     supabase.from("profiles").select("role").single(),
     supabase
       .from("businesses")
-      .select("secondary_color, logo_url, hero_image_url")
+      .select("secondary_color, logo_url, hero_image_url, working_hours")
       .eq("id", business.id)
       .single(),
   ]);
@@ -45,6 +47,7 @@ export default async function AjustesPage() {
     secondary_color: string | null;
     logo_url: string | null;
     hero_image_url: string | null;
+    working_hours: Horario | null;
   } | null;
 
   return (
@@ -101,6 +104,20 @@ export default async function AjustesPage() {
             logo_url: apariencia?.logo_url ?? null,
             hero_image_url: apariencia?.hero_image_url ?? null,
           }}
+        />
+      </div>
+
+      <div className="rounded-xl border border-slate-100 bg-white p-5 shadow-sm">
+        <h2 className="mb-1 text-sm font-bold text-slate-700">
+          Horario de apertura
+        </h2>
+        <p className="mb-4 text-xs text-slate-500">
+          Tus clientes solo podrán reservar dentro de estas horas
+        </p>
+        <FormHorario
+          businessId={business.id}
+          slug={business.slug}
+          inicial={apariencia?.working_hours ?? null}
         />
       </div>
 

@@ -5,6 +5,7 @@ import {
   TEMPLATES,
   ESSENTIAL_TEMPLATE_KEYS,
 } from "@/lib/automation-templates";
+import type { Horario } from "@/components/horario-editor";
 
 export interface BusinessInput {
   name: string;
@@ -12,6 +13,8 @@ export interface BusinessInput {
   sector: string;
   phone: string;
   primary_color: string;
+  secondary_color: string;
+  working_hours: Horario;
 }
 
 export interface ServiceInput {
@@ -77,6 +80,8 @@ export async function crearNegocio(
         sector: input.sector,
         phone: input.phone.trim() || null,
         primary_color: input.primary_color,
+        secondary_color: input.secondary_color,
+        working_hours: input.working_hours,
         plan: "free",
         plan_status: "trial",
         onboarding_completed: false,

@@ -12,6 +12,12 @@ import {
   Upload,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { TEMAS } from "@/lib/temas";
+import {
+  HorarioEditor,
+  HORARIO_POR_DEFECTO,
+  type Horario,
+} from "@/components/horario-editor";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,6 +35,7 @@ import {
   crearServicio,
   editarServicio,
   guardarApariencia,
+  guardarHorario,
   guardarNegocio,
   toggleServicio,
   type NegocioInput,
@@ -162,21 +169,6 @@ export function FormNegocio({
 }
 
 // ---------- Apariencia ----------
-
-// Temas listos para usar. `primary` = color de botones y acentos;
-// `secondary` = fondo de la cabecera de la página pública.
-const TEMAS: {
-  nombre: string;
-  primary: string;
-  secondary: string;
-}[] = [
-  { nombre: "Azul", primary: "#2563EB", secondary: "#0F172A" },
-  { nombre: "Verde", primary: "#059669", secondary: "#052E2B" },
-  { nombre: "Coral", primary: "#F97316", secondary: "#431407" },
-  { nombre: "Púrpura", primary: "#7C3AED", secondary: "#2E1065" },
-  { nombre: "Rosa", primary: "#EC4899", secondary: "#4A044E" },
-  { nombre: "Grafito", primary: "#334155", secondary: "#0B1120" },
-];
 
 const MAX_IMG_BYTES = 3 * 1024 * 1024; // 3 MB, igual que el bucket
 
@@ -489,6 +481,39 @@ export function FormApariencia({
 
       <Button onClick={guardarColores} disabled={pending}>
         {pending ? "Guardando..." : "Guardar apariencia"}
+      </Button>
+    </div>
+  );
+}
+
+// ---------- Horario de apertura ----------
+
+export function FormHorario({
+  businessId,
+  slug,
+  inicial,
+}: {
+  businessId: string;
+  slug: string;
+  inicial: Horario | null;
+}) {
+  const [horario, setHorario] = useState<Horario>(
+    inicial && Object.keys(inicial).length > 0 ? inicial : HORARIO_POR_DEFECTO
+  );
+  const [pending, startTransition] = useTransition();
+
+  const guardar = () =>
+    startTransition(async () => {
+      const r = await guardarHorario(businessId, slug, horario);
+      if (r.error) toast.error(r.error);
+      else toast.success("Horario guardado");
+    });
+
+  return (
+    <div className="space-y-4">
+      <HorarioEditor value={horario} onChange={setHorario} />
+      <Button onClick={guardar} disabled={pending}>
+        {pending ? "Guardando..." : "Guardar horario"}
       </Button>
     </div>
   );
