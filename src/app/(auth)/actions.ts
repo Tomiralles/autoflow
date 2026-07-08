@@ -95,6 +95,48 @@ export async function signup(
   redirect("/onboarding");
 }
 
+export async function solicitarRecuperacion(
+  _prev: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const email = String(formData.get("email") ?? "").trim();
+  if (!email) return { error: "Escribe tu email." };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/restablecer`,
+  });
+
+  if (error?.code === "over_email_send_rate_limit") {
+    return { error: "Demasiados intentos seguidos. Espera unos minutos." };
+  }
+  // No confirmamos ni desmentimos si el email existe: mismo mensaje siempre.
+  return {
+    message:
+      "Si ese email tiene una cuenta, te hemos enviado un enlace para recuperar el acceso.",
+  };
+}
+
+export async function restablecerPassword(
+  _prev: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const password = String(formData.get("password") ?? "");
+  if (password.length < 8) {
+    return { error: "La contraseña debe tener al menos 8 caracteres." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    return {
+      error: "No se pudo cambiar la contraseña. Pide un nuevo enlace desde /recuperar.",
+    };
+  }
+
+  redirect(await destinoTrasLogin());
+}
+
 export async function logout(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();

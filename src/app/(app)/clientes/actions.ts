@@ -95,6 +95,49 @@ export async function registrarLlamada(
   return { ok: true };
 }
 
+// Derecho al olvido (RGPD): borra los datos personales del cliente en el
+// lead, sus citas, tareas e interacciones, pero CONSERVA las filas para no
+// romper el histórico ni las estadísticas. Irreversible a propósito.
+export async function anonimizarCliente(leadId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("id")
+    .eq("id", leadId)
+    .single();
+  if (!lead) return { error: "El cliente ya no existe." };
+
+  const { error } = await supabase
+    .from("leads")
+    .update({
+      full_name: "Cliente eliminado",
+      phone: null,
+      email: null,
+      notes: null,
+      status: "perdido",
+      pipeline_stage: "cerrado_perdido",
+    })
+    .eq("id", leadId);
+  if (error) return { error: "No se pudieron borrar los datos." };
+
+  // Datos personales copiados a otras tablas (RLS limita al negocio propio)
+  await supabase
+    .from("appointments")
+    .update({ client_name: "Cliente eliminado", client_email: null, client_phone: null, notes: null })
+    .eq("lead_id", leadId);
+  await supabase
+    .from("tasks")
+    .update({ lead_name: "Cliente eliminado", lead_phone: null })
+    .eq("lead_id", leadId);
+  await supabase.from("interactions").update({ notes: null }).eq("lead_id", leadId);
+
+  revalidatePath("/clientes");
+  revalidatePath("/hoy");
+  revalidatePath("/citas");
+  return { ok: true };
+}
+
 // Cambio de etapa desde la lista (select simple, no tablero kanban)
 export async function cambiarEtapa(
   leadId: string,

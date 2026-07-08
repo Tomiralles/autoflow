@@ -56,13 +56,35 @@ export default async function CitasPage() {
       </div>
 
       {citas.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-300 p-12 text-center">
+        <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center">
           <CalendarDays size={36} className="mx-auto mb-3 text-slate-300" />
           <p className="font-medium text-slate-600">No hay citas próximas</p>
           <p className="mt-1 text-sm text-slate-400">
             Crea una con &quot;Nueva cita&quot; o espera reservas de tu página
-            pública.
+            pública. Cuando lleguen, se verán así:
           </p>
+          {/* Cita de ejemplo para que el dueño reconozca el formato */}
+          <div className="mx-auto mt-4 max-w-md rounded-xl border border-dashed border-slate-200 bg-white p-4 text-left opacity-70">
+            <div className="flex items-center gap-4">
+              <div className="w-12 shrink-0 text-center">
+                <p className="text-sm font-bold text-slate-900">10:30</p>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-slate-900">
+                  María García
+                </p>
+                <p className="truncate text-xs text-slate-500">
+                  Corte y peinado · 612 345 678
+                </p>
+              </div>
+              <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
+                Confirmada
+              </span>
+              <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-slate-400">
+                EJEMPLO
+              </span>
+            </div>
+          </div>
         </div>
       ) : (
         [...porDia.entries()].map(([fecha, grupo]) => (

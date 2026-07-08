@@ -4,20 +4,26 @@ import { createClient } from "@/lib/supabase/server";
 import { enviarEmail } from "@/lib/email";
 import { buildIcsContent } from "@/lib/ics";
 import { renderTemplate } from "@/lib/notifications";
+import type { Ocupacion } from "@/lib/slots";
 
-// Horas ocupadas de un día, vía RPC pública (no expone datos de clientes)
+// Intervalos ocupados de un día (inicio + duración), vía RPC pública.
+// No expone datos de clientes; la duración hace falta para filtrar por
+// solapamiento y no ofrecer huecos dentro de una cita larga.
 export async function huecosOcupados(
   slug: string,
   date: string
-): Promise<string[]> {
+): Promise<Ocupacion[]> {
   const supabase = await createClient();
   const { data } = await supabase.rpc("get_booked_slots", {
     p_slug: slug,
     p_date: date,
   });
-  return ((data as { time?: string }[] | string[] | null) ?? []).map((t) =>
-    typeof t === "string" ? t.slice(0, 5) : (t.time ?? "").slice(0, 5)
-  );
+  return (
+    (data as { start_time: string; duration_minutes: number }[] | null) ?? []
+  ).map((r) => ({
+    time: r.start_time.slice(0, 5),
+    duration: r.duration_minutes || 60,
+  }));
 }
 
 export interface ReservaInput {

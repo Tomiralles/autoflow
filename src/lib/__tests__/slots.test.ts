@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { generarHuecos, horarioDelDia } from "@/lib/slots";
+import { filtrarHuecosLibres, generarHuecos, horarioDelDia } from "@/lib/slots";
 
 describe("generarHuecos", () => {
   it("genera huecos de 60 min de 9 a 19 (el último empieza a las 18)", () => {
@@ -29,6 +29,48 @@ describe("generarHuecos", () => {
   it("soporta medias horas de apertura", () => {
     const huecos = generarHuecos("09:30", "11:30", 30);
     expect(huecos).toEqual(["09:30", "10:00", "10:30", "11:00"]);
+  });
+});
+
+describe("filtrarHuecosLibres", () => {
+  it("una cita larga bloquea todos los huecos que caen dentro de ella", () => {
+    // Cita de 120 min a las 10:00 (ocupa 10:00-12:00). Huecos de 25 min.
+    const candidatos = generarHuecos("09:00", "13:00", 25);
+    const libres = filtrarHuecosLibres(candidatos, 25, [
+      { time: "10:00", duration: 120 },
+    ]);
+    // 09:50+25=10:15 pisa la cita; 10:15/10:40/11:05/11:30/11:55 caen dentro
+    expect(libres).toEqual(["09:00", "09:25", "12:20"]);
+  });
+
+  it("un hueco largo que envolvería una cita corta también se bloquea", () => {
+    // Cita de 25 min a las 10:30. Servicio de 120 min: el hueco de 10:00
+    // terminaría a las 12:00 pasando por encima de la cita.
+    const libres = filtrarHuecosLibres(["08:00", "10:00", "12:00"], 120, [
+      { time: "10:30", duration: 25 },
+    ]);
+    expect(libres).toEqual(["08:00", "12:00"]);
+  });
+
+  it("una cita contigua no bloquea (termina justo cuando empieza el hueco)", () => {
+    const libres = filtrarHuecosLibres(["12:00"], 30, [
+      { time: "10:00", duration: 120 },
+    ]);
+    expect(libres).toEqual(["12:00"]);
+  });
+
+  it("coincidencia exacta se bloquea (comportamiento anterior conservado)", () => {
+    const libres = filtrarHuecosLibres(["10:00", "11:00"], 60, [
+      { time: "10:00", duration: 60 },
+    ]);
+    expect(libres).toEqual(["11:00"]);
+  });
+
+  it("sin duración usa 60 min por defecto", () => {
+    const libres = filtrarHuecosLibres(["10:30"], 30, [
+      { time: "10:00", duration: 0 },
+    ]);
+    expect(libres).toEqual([]);
   });
 });
 

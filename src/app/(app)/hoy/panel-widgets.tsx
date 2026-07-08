@@ -24,7 +24,7 @@ const ESTADO_BADGE: Record<string, { label: string; className: string }> = {
   confirmada: { label: "Confirmada", className: "bg-green-100 text-green-700" },
   pendiente: { label: "Por confirmar", className: "bg-amber-100 text-amber-700" },
   completada: { label: "Completada", className: "bg-slate-200 text-slate-600" },
-  cancelada: { label: "Cancelada", className: "bg-slate-100 text-slate-500" },
+  cancelada: { label: "Cancelada", className: "bg-red-50 text-red-600" },
   no_asistio: { label: "No asistió", className: "bg-red-100 text-red-600" },
 };
 

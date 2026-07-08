@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  anonimizarCliente,
   cambiarEtapa,
   crearCliente,
   editarCliente,
@@ -226,6 +227,69 @@ function LlamadaDialog({ cliente }: { cliente: ClienteRow }) {
   );
 }
 
+// Derecho al olvido (RGPD): dos pasos para evitar borrados accidentales.
+// No borra la ficha: sustituye nombre/teléfono/email por datos anónimos
+// en el cliente y en todas sus citas, tareas y llamadas.
+function ZonaRGPD({
+  clienteId,
+  onDone,
+}: {
+  clienteId: string;
+  onDone: () => void;
+}) {
+  const [confirmando, setConfirmando] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  const anonimizar = () =>
+    startTransition(async () => {
+      const r = await anonimizarCliente(clienteId);
+      if (r.error) toast.error(r.error);
+      else {
+        toast.success("Datos del cliente borrados");
+        onDone();
+      }
+    });
+
+  return (
+    <div className="border-t border-slate-100 pt-3">
+      {confirmando ? (
+        <div className="space-y-2 rounded-xl bg-red-50 p-3">
+          <p className="text-sm font-medium text-red-700">
+            Se borrarán su nombre, teléfono y email de la ficha y de todas
+            sus citas. Esto no se puede deshacer. ¿Seguro?
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmando(false)}
+              disabled={pending}
+            >
+              No, cancelar
+            </Button>
+            <Button
+              size="sm"
+              className="bg-red-600 text-white hover:bg-red-700"
+              onClick={anonimizar}
+              disabled={pending}
+            >
+              {pending ? "Borrando..." : "Sí, borrar sus datos"}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setConfirmando(true)}
+          className="text-xs text-slate-400 underline-offset-2 hover:text-red-600 hover:underline"
+        >
+          Borrar los datos personales de este cliente (RGPD)
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function FilaCliente({ cliente }: { cliente: ClienteRow }) {
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -298,6 +362,7 @@ export function FilaCliente({ cliente }: { cliente: ClienteRow }) {
             pending={pending}
             onSave={guardar}
           />
+          <ZonaRGPD clienteId={cliente.id} onDone={() => setOpen(false)} />
         </DialogContent>
       </Dialog>
     </div>

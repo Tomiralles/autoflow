@@ -212,9 +212,32 @@ export default async function HoyPage() {
           </div>
           <div className="divide-y divide-slate-50">
             {citasHoy.length === 0 ? (
-              <div className="p-8 text-center">
-                <CalendarDays size={32} className="mx-auto mb-2 text-slate-300" />
-                <p className="text-sm text-slate-500">No hay citas para hoy</p>
+              <div className="p-5">
+                <p className="mb-3 text-center text-sm text-slate-500">
+                  Hoy no tienes citas. Cuando te reserven, se verán así:
+                </p>
+                {/* Cita de ejemplo: misma maqueta que una real, atenuada */}
+                <div className="rounded-xl border border-dashed border-slate-200 p-4 opacity-70">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 shrink-0 text-center">
+                      <p className="text-sm font-bold text-slate-900">10:30</p>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium text-slate-900">
+                        María García
+                      </p>
+                      <p className="truncate text-xs text-slate-500">
+                        Corte y peinado
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-700">
+                      Confirmada
+                    </span>
+                    <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-slate-400">
+                      EJEMPLO
+                    </span>
+                  </div>
+                </div>
               </div>
             ) : (
               citasHoy.map((apt) => (

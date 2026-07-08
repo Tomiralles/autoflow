@@ -17,6 +17,35 @@ const DIAS = [
   "sabado",
 ];
 
+export interface Ocupacion {
+  time: string; // "HH:MM"
+  duration: number; // minutos
+}
+
+function aMinutos(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h * 60 + m;
+}
+
+// Quita los huecos que se solapan con alguna cita existente. Comparar
+// solo la hora de inicio no basta: una cita de 120 min debe bloquear
+// también los huecos que caen dentro de ella.
+export function filtrarHuecosLibres(
+  candidatos: string[],
+  durationMins: number,
+  ocupadas: Ocupacion[]
+): string[] {
+  const rangos = ocupadas.map((o) => {
+    const ini = aMinutos(o.time);
+    return [ini, ini + (o.duration || 60)] as const;
+  });
+  return candidatos.filter((t) => {
+    const ini = aMinutos(t);
+    const fin = ini + durationMins;
+    return !rangos.some(([oIni, oFin]) => ini < oFin && fin > oIni);
+  });
+}
+
 export function generarHuecos(
   start: string,
   end: string,

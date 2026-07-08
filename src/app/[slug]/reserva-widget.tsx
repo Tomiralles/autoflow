@@ -3,9 +3,11 @@
 import { useCallback, useMemo, useState, useTransition } from "react";
 import { Check, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import {
+  filtrarHuecosLibres,
   generarHuecos,
   horarioDelDia as horarioDelDiaLib,
   type DayHours,
+  type Ocupacion,
 } from "@/lib/slots";
 import { huecosOcupados, reservar } from "./actions";
 
@@ -58,9 +60,10 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
   const [servicio, setServicio] = useState<PublicService | null>(null);
   const [fecha, setFecha] = useState<string | null>(null);
   const [hora, setHora] = useState<string | null>(null);
-  const [ocupadas, setOcupadas] = useState<string[]>([]);
+  const [ocupadas, setOcupadas] = useState<Ocupacion[]>([]);
   const [cargandoHuecos, setCargandoHuecos] = useState(false);
   const [datos, setDatos] = useState({ full_name: "", email: "", phone: "" });
+  const [aceptaPrivacidad, setAceptaPrivacidad] = useState(false);
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
 
@@ -86,12 +89,9 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
     if (!fecha) return [];
     const h = horarioDelDia(fecha);
     if (!h.open) return [];
-    const todos = generarHuecos(
-      h.start || "09:00",
-      h.end || "19:00",
-      servicio?.duration_minutes || 60
-    );
-    return todos.filter((t) => !ocupadas.includes(t));
+    const duracion = servicio?.duration_minutes || 60;
+    const todos = generarHuecos(h.start || "09:00", h.end || "19:00", duracion);
+    return filtrarHuecosLibres(todos, duracion, ocupadas);
   }, [fecha, ocupadas, servicio, horarioDelDia]);
 
   const confirmarReserva = () =>
@@ -277,7 +277,7 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
           <button
             disabled={!fecha || !hora}
             onClick={() => setPaso("datos")}
-            className="w-full rounded-xl py-3 text-sm font-bold text-white transition-opacity disabled:opacity-40"
+            className="w-full rounded-xl py-3.5 text-base font-bold text-white transition-opacity disabled:opacity-40"
             style={{ backgroundColor: color }}
           >
             Continuar
@@ -321,13 +321,26 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
             value={datos.email}
             onChange={(e) => setDatos({ ...datos, email: e.target.value })}
           />
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-white p-3 text-sm text-slate-600 shadow-sm">
+            <input
+              type="checkbox"
+              checked={aceptaPrivacidad}
+              onChange={(e) => setAceptaPrivacidad(e.target.checked)}
+              className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer rounded"
+              style={{ accentColor: color }}
+            />
+            <span>
+              Acepto que {business.name} use mis datos para gestionar esta
+              reserva y avisarme sobre mi cita. *
+            </span>
+          </label>
           {error && (
             <p className="text-sm font-medium text-red-600">{error}</p>
           )}
           <button
-            disabled={pending || !datos.full_name.trim()}
+            disabled={pending || !datos.full_name.trim() || !aceptaPrivacidad}
             onClick={confirmarReserva}
-            className="w-full rounded-xl py-3 text-sm font-bold text-white transition-opacity disabled:opacity-40"
+            className="w-full rounded-xl py-3.5 text-base font-bold text-white transition-opacity disabled:opacity-40"
             style={{ backgroundColor: color }}
           >
             {pending ? "Reservando..." : "Confirmar reserva"}

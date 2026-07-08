@@ -366,6 +366,97 @@ async function runNoContesto(supabase: SupabaseClient): Promise<number> {
   return processed;
 }
 
+// "Reporte de ego": los lunes, resumen de la semana anterior al dueño
+// (citas atendidas + dinero cobrado). Retención pura: que vea cada semana
+// lo que la app hace por él. Va en el cron diario porque Vercel Hobby no
+// admite un tercer cron. Solo se envía si hubo actividad — un email de
+// "0 citas" desanima en vez de fidelizar.
+async function runReporteSemanal(supabase: SupabaseClient): Promise<number> {
+  const hoy = hoyISO();
+  const esLunes = new Date(`${hoy}T12:00:00`).getDay() === 1;
+  if (!esLunes) return 0;
+
+  // Semana anterior completa: lunes a domingo
+  const d = new Date(`${hoy}T12:00:00`);
+  d.setDate(d.getDate() - 7);
+  const inicio = d.toISOString().slice(0, 10);
+  d.setDate(d.getDate() + 6);
+  const fin = d.toISOString().slice(0, 10);
+
+  const { data: negocios } = await supabase
+    .from("businesses")
+    .select("id, name, email, weekly_report_sent_date")
+    .eq("onboarding_completed", true)
+    .neq("plan_status", "inactive")
+    .not("email", "is", null);
+
+  let enviados = 0;
+
+  for (const negocio of negocios ?? []) {
+    // Idempotencia: si el cron corre dos veces el mismo lunes, no reenviar
+    if (negocio.weekly_report_sent_date && negocio.weekly_report_sent_date >= hoy)
+      continue;
+
+    const [citasRes, facturasRes] = await Promise.all([
+      supabase
+        .from("appointments")
+        .select("id", { count: "exact", head: true })
+        .eq("business_id", negocio.id)
+        .gte("date", inicio)
+        .lte("date", fin)
+        .not("status", "in", "(cancelada,no_asistio)"),
+      supabase
+        .from("invoices")
+        .select("total")
+        .eq("business_id", negocio.id)
+        .eq("status", "cobrada")
+        .gte("paid_date", inicio)
+        .lte("paid_date", fin),
+    ]);
+
+    const citas = citasRes.count ?? 0;
+    const ingresos = (facturasRes.data ?? []).reduce(
+      (sum, f) => sum + (f.total || 0),
+      0
+    );
+    if (citas === 0 && ingresos === 0) continue;
+
+    const lineas = [
+      `Hola ${negocio.name},`,
+      "",
+      "Así fue tu semana pasada:",
+      "",
+      `✅ ${citas} ${citas === 1 ? "cita atendida" : "citas atendidas"}`,
+    ];
+    if (ingresos > 0) {
+      lineas.push(`💰 ${ingresos.toLocaleString("es")}€ cobrados`);
+    }
+    lineas.push(
+      "",
+      "Mientras tanto, las confirmaciones y recordatorios han salido solos. Tú a lo tuyo.",
+      "",
+      "— AutoFlow AI"
+    );
+
+    const ok = await enviarEmail({
+      to: negocio.email,
+      fromName: "AutoFlow AI",
+      subject: `Tu semana: ${citas} ${citas === 1 ? "cita" : "citas"}${ingresos > 0 ? ` y ${ingresos.toLocaleString("es")}€` : ""}`,
+      body: lineas.join("\n"),
+    });
+
+    if (ok) {
+      await supabase
+        .from("businesses")
+        .update({ weekly_report_sent_date: hoy })
+        .eq("id", negocio.id);
+      enviados++;
+    }
+  }
+
+  return enviados;
+}
+
 export async function runDailyAutomations(
   supabase: SupabaseClient
 ): Promise<{ processed: number; porRutina: Record<string, number> }> {
@@ -375,6 +466,7 @@ export async function runDailyAutomations(
     post_venta: await runPostVenta(supabase),
     factura_vencida: await runFacturaVencida(supabase),
     no_contesto: await runNoContesto(supabase),
+    reporte_semanal: await runReporteSemanal(supabase),
   };
   return {
     processed: Object.values(porRutina).reduce((a, b) => a + b, 0),
