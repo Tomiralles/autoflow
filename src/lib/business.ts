@@ -32,6 +32,7 @@ export async function getBusinessOrRedirect(): Promise<Business> {
     .select(
       "id, name, slug, sector, phone, email, address, description, primary_color, plan, plan_status, onboarding_completed, public_page_settings"
     )
+    .eq("owner_id", user.id)
     .limit(1);
 
   const business = businesses?.[0];
