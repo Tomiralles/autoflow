@@ -43,3 +43,6 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# brainstorming mockups (herramienta de sesión, no forma parte de la app)
+.superpowers/
