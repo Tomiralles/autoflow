@@ -18,6 +18,7 @@ export interface AptRow {
   service_name: string | null;
   status: string;
   materials_notes: string | null;
+  staff_name?: string | null; // quién la atiende (negocios con equipo)
 }
 
 const ESTADO_BADGE: Record<string, { label: string; className: string }> = {
@@ -61,6 +62,7 @@ export function ReservaPendiente({ apt, hoy }: { apt: AptRow; hoy: string }) {
         </p>
         <p className="truncate text-xs text-slate-500">
           {apt.service_name}
+          {apt.staff_name ? ` · con ${apt.staff_name}` : ""}
           {apt.client_phone ? ` · ${apt.client_phone}` : ""}
         </p>
       </div>
@@ -112,7 +114,10 @@ export function CitaDeHoy({
           <p className="truncate text-sm font-medium text-slate-900">
             {apt.client_name}
           </p>
-          <p className="truncate text-xs text-slate-500">{apt.service_name}</p>
+          <p className="truncate text-xs text-slate-500">
+            {apt.service_name}
+            {apt.staff_name ? ` · con ${apt.staff_name}` : ""}
+          </p>
         </div>
         <EstadoBadge status={apt.status} />
       </div>

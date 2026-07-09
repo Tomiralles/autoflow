@@ -42,7 +42,7 @@ export default async function HoyPage() {
       supabase
         .from("appointments")
         .select(
-          "id, client_name, client_phone, date, time, service_name, status, materials_notes"
+          "id, client_name, client_phone, date, time, service_name, status, materials_notes, staff:staff_id(name)"
         )
         .eq("business_id", business.id)
         .eq("date", hoy)
@@ -50,7 +50,7 @@ export default async function HoyPage() {
       supabase
         .from("appointments")
         .select(
-          "id, client_name, client_phone, date, time, service_name, status, materials_notes"
+          "id, client_name, client_phone, date, time, service_name, status, materials_notes, staff:staff_id(name)"
         )
         .eq("business_id", business.id)
         .eq("status", "pendiente")
@@ -70,8 +70,15 @@ export default async function HoyPage() {
     ]);
 
   const tareas = (tareasRes.data ?? []) as TaskRow[];
-  const citasHoy = (citasHoyRes.data ?? []) as AptRow[];
-  const pendientes = (pendientesRes.data ?? []) as AptRow[];
+  // El embed staff:staff_id(name) llega como objeto anidado → se aplana
+  type RawApt = AptRow & { staff: { name: string } | null };
+  const conStaff = (rows: unknown): AptRow[] =>
+    ((rows ?? []) as RawApt[]).map(({ staff, ...c }) => ({
+      ...c,
+      staff_name: staff?.name ?? null,
+    }));
+  const citasHoy = conStaff(citasHoyRes.data);
+  const pendientes = conStaff(pendientesRes.data);
   const ingresosMes = (facturasRes.data ?? [])
     .filter((f) => f.paid_date?.startsWith(mesActual))
     .reduce((sum, f) => sum + (f.total || 0), 0);

@@ -167,6 +167,7 @@ export default async function PublicPage({ params }: PageProps) {
           primary_color: biz.primary_color,
           working_hours: biz.working_hours,
           services: biz.services,
+          staff: biz.staff,
           show_prices: settings.show_prices !== false,
         }}
       />

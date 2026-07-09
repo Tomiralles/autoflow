@@ -92,6 +92,81 @@ export async function guardarApariencia(
   return { ok: true };
 }
 
+// ---------- Equipo (trabajadores sin login, con agenda propia) ----------
+
+export interface TrabajadorInput {
+  name: string;
+  working_hours: Horario | null; // null = usa el horario del negocio
+}
+
+export async function crearTrabajador(
+  businessId: string,
+  slug: string,
+  input: TrabajadorInput
+): Promise<ActionResult> {
+  if (!input.name.trim()) return { error: "El nombre es obligatorio." };
+
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("staff")
+    .select("id", { count: "exact", head: true })
+    .eq("business_id", businessId);
+
+  const { error } = await supabase.from("staff").insert({
+    business_id: businessId,
+    name: input.name.trim(),
+    working_hours: input.working_hours,
+    is_active: true,
+    sort_order: count ?? 0,
+  });
+  if (error) return { error: "No se pudo añadir a la persona." };
+
+  revalidatePath("/ajustes");
+  revalidatePath(`/${slug}`);
+  return { ok: true };
+}
+
+export async function editarTrabajador(
+  staffId: string,
+  slug: string,
+  input: TrabajadorInput
+): Promise<ActionResult> {
+  if (!input.name.trim()) return { error: "El nombre es obligatorio." };
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("staff")
+    .update({
+      name: input.name.trim(),
+      working_hours: input.working_hours,
+    })
+    .eq("id", staffId);
+  if (error) return { error: "No se pudieron guardar los cambios." };
+
+  revalidatePath("/ajustes");
+  revalidatePath(`/${slug}`);
+  return { ok: true };
+}
+
+// Igual que los servicios: desactivar, no borrar (las citas antiguas
+// siguen apuntando a la persona y no se pierde el histórico).
+export async function toggleTrabajador(
+  staffId: string,
+  slug: string,
+  activo: boolean
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("staff")
+    .update({ is_active: activo })
+    .eq("id", staffId);
+  if (error) return { error: "No se pudo cambiar a la persona." };
+
+  revalidatePath("/ajustes");
+  revalidatePath(`/${slug}`);
+  return { ok: true };
+}
+
 export interface ServicioInput {
   name: string;
   description: string;

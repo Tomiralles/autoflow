@@ -3,6 +3,7 @@ import {
   filtrarHuecosLibres,
   generarHuecos,
   horarioDelDia,
+  huecosLibresEquipo,
   sinHuecosPasados,
 } from "@/lib/slots";
 
@@ -103,6 +104,91 @@ describe("filtrarHuecosLibres", () => {
       { time: "10:00", duration: 0 },
     ]);
     expect(libres).toEqual([]);
+  });
+});
+
+describe("huecosLibresEquipo", () => {
+  const nueveAonce = { open: true, start: "09:00", end: "11:00" };
+
+  it("un hueco se ofrece si al menos un trabajador está libre", () => {
+    const libres = huecosLibresEquipo(
+      [
+        { id: "ana", hours: nueveAonce },
+        { id: "bea", hours: nueveAonce },
+      ],
+      60,
+      [{ time: "09:00", duration: 60, staff_id: "ana" }]
+    );
+    // Ana ocupada a las 09:00 pero Bea libre → el hueco sigue ofreciéndose
+    expect(libres).toEqual(["09:00", "10:00"]);
+  });
+
+  it("si todos están ocupados a esa hora, el hueco desaparece", () => {
+    const libres = huecosLibresEquipo(
+      [
+        { id: "ana", hours: nueveAonce },
+        { id: "bea", hours: nueveAonce },
+      ],
+      60,
+      [
+        { time: "09:00", duration: 60, staff_id: "ana" },
+        { time: "09:00", duration: 60, staff_id: "bea" },
+      ]
+    );
+    expect(libres).toEqual(["10:00"]);
+  });
+
+  it("una cita sin trabajador asignado bloquea a todo el equipo", () => {
+    const libres = huecosLibresEquipo(
+      [
+        { id: "ana", hours: nueveAonce },
+        { id: "bea", hours: nueveAonce },
+      ],
+      60,
+      [{ time: "09:00", duration: 60, staff_id: null }]
+    );
+    expect(libres).toEqual(["10:00"]);
+  });
+
+  it("cada trabajador aporta los huecos de SU horario (unión ordenada)", () => {
+    const libres = huecosLibresEquipo(
+      [
+        { id: "ana", hours: { open: true, start: "09:00", end: "11:00" } },
+        { id: "bea", hours: { open: true, start: "16:00", end: "18:00" } },
+      ],
+      60,
+      []
+    );
+    expect(libres).toEqual(["09:00", "10:00", "16:00", "17:00"]);
+  });
+
+  it("un trabajador que no trabaja ese día no aporta huecos", () => {
+    const libres = huecosLibresEquipo(
+      [
+        { id: "ana", hours: { open: false } },
+        { id: "bea", hours: nueveAonce },
+      ],
+      60,
+      [{ time: "09:00", duration: 60, staff_id: "bea" }]
+    );
+    // Ana cerrada, y Bea ocupada a las 09:00
+    expect(libres).toEqual(["10:00"]);
+  });
+
+  it("con lista de un solo trabajador filtra solo sus citas", () => {
+    const libres = huecosLibresEquipo(
+      [{ id: "ana", hours: nueveAonce }],
+      60,
+      [
+        { time: "09:00", duration: 60, staff_id: "bea" }, // de otra → no molesta
+        { time: "10:00", duration: 60, staff_id: "ana" },
+      ]
+    );
+    expect(libres).toEqual(["09:00"]);
+  });
+
+  it("sin equipo no hay huecos (lista vacía)", () => {
+    expect(huecosLibresEquipo([], 60, [])).toEqual([]);
   });
 });
 

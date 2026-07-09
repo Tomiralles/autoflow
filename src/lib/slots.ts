@@ -20,6 +20,7 @@ const DIAS = [
 export interface Ocupacion {
   time: string; // "HH:MM"
   duration: number; // minutos
+  staff_id?: string | null; // null = cita sin trabajador asignado
 }
 
 function aMinutos(hhmm: string): number {
@@ -44,6 +45,42 @@ export function filtrarHuecosLibres(
     const fin = ini + durationMins;
     return !rangos.some(([oIni, oFin]) => ini < oFin && fin > oIni);
   });
+}
+
+// Huecos libres cuando el negocio tiene equipo: un hueco se ofrece si
+// AL MENOS un trabajador de la lista puede darlo (trabaja a esa hora y
+// no tiene cita solapada). Las citas sin trabajador asignado bloquean a
+// TODOS: alguien las va a atender, mejor no ofrecer ese hueco aunque la
+// base de datos lo permitiera. Para "con este trabajador en concreto",
+// se pasa una lista de uno.
+export interface StaffDelDia {
+  id: string;
+  hours: DayHours; // horario de ESE día ya resuelto (propio o del negocio)
+}
+
+export function huecosLibresEquipo(
+  equipo: StaffDelDia[],
+  durationMins: number,
+  ocupadas: Ocupacion[]
+): string[] {
+  const sinAsignar = ocupadas.filter((o) => !o.staff_id);
+  const libres = new Set<string>();
+  for (const s of equipo) {
+    if (!s.hours.open) continue;
+    const candidatos = generarHuecos(
+      s.hours.start || "09:00",
+      s.hours.end || "19:00",
+      durationMins
+    );
+    const propias = ocupadas.filter((o) => o.staff_id === s.id);
+    for (const t of filtrarHuecosLibres(candidatos, durationMins, [
+      ...propias,
+      ...sinAsignar,
+    ])) {
+      libres.add(t);
+    }
+  }
+  return [...libres].sort();
 }
 
 // Para el día de HOY, quita los huecos cuya hora ya pasó. `ahora` es la

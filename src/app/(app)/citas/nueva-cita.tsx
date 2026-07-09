@@ -28,11 +28,17 @@ export interface ServiceOption {
   name: string;
 }
 
+export interface StaffOption {
+  id: string;
+  name: string;
+}
+
 const VACIA: NuevaCitaInput = {
   client_name: "",
   client_phone: "",
   client_email: "",
   service_id: "",
+  staff_id: "",
   date: "",
   time: "",
   notes: "",
@@ -41,10 +47,12 @@ const VACIA: NuevaCitaInput = {
 export function NuevaCitaDialog({
   businessId,
   services,
+  equipo,
   hoy,
 }: {
   businessId: string;
   services: ServiceOption[];
+  equipo: StaffOption[];
   hoy: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -123,6 +131,26 @@ export function NuevaCitaDialog({
                   {services.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
                       {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {equipo.length > 0 && (
+            <div className="space-y-2">
+              <Label>¿Quién la atiende?</Label>
+              <Select
+                value={form.staff_id}
+                onValueChange={(v) => set("staff_id", v)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Elige a alguien del equipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {equipo.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.name}
                     </SelectItem>
                   ))}
                 </SelectContent>

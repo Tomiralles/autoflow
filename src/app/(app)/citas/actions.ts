@@ -13,6 +13,7 @@ export interface NuevaCitaInput {
   client_phone: string;
   client_email: string;
   service_id: string;
+  staff_id: string; // "" = sin asignar
   date: string;
   time: string;
   notes: string;
@@ -45,6 +46,19 @@ export async function crearCita(
     service = data;
   }
 
+  // El trabajador debe ser del negocio (el select con RLS ya limita,
+  // pero el eq de business_id lo hace explícito)
+  let staffId: string | null = null;
+  if (input.staff_id) {
+    const { data: staff } = await supabase
+      .from("staff")
+      .select("id")
+      .eq("id", input.staff_id)
+      .eq("business_id", businessId)
+      .single();
+    staffId = staff?.id ?? null;
+  }
+
   const { error } = await supabase.from("appointments").insert({
     business_id: businessId,
     client_name: input.client_name.trim(),
@@ -54,6 +68,7 @@ export async function crearCita(
     service_name: service?.name ?? null,
     duration_minutes: service?.duration_minutes ?? null,
     materials_notes: service?.materials_notes ?? null,
+    staff_id: staffId,
     date: input.date,
     time: input.time,
     status: "confirmada",
@@ -61,8 +76,14 @@ export async function crearCita(
   });
 
   if (error) {
-    if (error.code === "23505") {
-      return { error: "Ya hay una cita a esa hora. Elige otro hueco." };
+    // 23505 = índice único (histórico), 23P01 = constraint de exclusión
+    // por trabajador (el actual)
+    if (error.code === "23505" || error.code === "23P01") {
+      return {
+        error: staffId
+          ? "Esa persona ya tiene una cita a esa hora. Elige otro hueco."
+          : "Ya hay una cita a esa hora. Elige otro hueco.",
+      };
     }
     return { error: "No se pudo crear la cita." };
   }

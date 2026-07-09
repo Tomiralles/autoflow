@@ -11,6 +11,11 @@ import {
   NuevoServicioDialog,
   type ServicioRow,
 } from "./ajustes-widgets";
+import {
+  FilaTrabajador,
+  NuevoTrabajadorDialog,
+  type TrabajadorRow,
+} from "./equipo-widgets";
 import type { Horario } from "@/components/horario-editor";
 
 export default async function AjustesPage() {
@@ -29,7 +34,7 @@ export default async function AjustesPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [serviciosRes, perfilRes, aparienciaRes] = await Promise.all([
+  const [serviciosRes, perfilRes, aparienciaRes, equipoRes] = await Promise.all([
     supabase
       .from("services")
       .select(
@@ -45,9 +50,16 @@ export default async function AjustesPage() {
       .select("secondary_color, logo_url, hero_image_url, working_hours")
       .eq("id", business.id)
       .single(),
+    supabase
+      .from("staff")
+      .select("id, name, working_hours, is_active")
+      .eq("business_id", business.id)
+      .order("sort_order")
+      .order("created_at"),
   ]);
 
   const servicios = (serviciosRes.data ?? []) as ServicioRow[];
+  const equipo = (equipoRes.data ?? []) as TrabajadorRow[];
   const esAdmin = perfilRes.data?.role === "admin";
   const apariencia = aparienciaRes.data as {
     secondary_color: string | null;
@@ -125,6 +137,39 @@ export default async function AjustesPage() {
           slug={business.slug}
           inicial={apariencia?.working_hours ?? null}
         />
+      </div>
+
+      <div className="rounded-xl border border-slate-100 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+          <div>
+            <h2 className="text-sm font-bold text-slate-700">Equipo</h2>
+            <p className="text-xs text-slate-500">
+              Si sois varios, cada persona tiene su propia agenda
+            </p>
+          </div>
+          <NuevoTrabajadorDialog
+            businessId={business.id}
+            slug={business.slug}
+            horarioNegocio={apariencia?.working_hours ?? null}
+          />
+        </div>
+        <div className="divide-y divide-slate-50">
+          {equipo.length === 0 ? (
+            <p className="p-6 text-center text-sm text-slate-400">
+              ¿Trabajáis 2 o más personas? Añadidlas y vuestros clientes
+              podrán elegir con quién reservar
+            </p>
+          ) : (
+            equipo.map((t) => (
+              <FilaTrabajador
+                key={t.id}
+                trabajador={t}
+                slug={business.slug}
+                horarioNegocio={apariencia?.working_hours ?? null}
+              />
+            ))
+          )}
+        </div>
       </div>
 
       <div className="rounded-xl border border-slate-100 bg-white shadow-sm">

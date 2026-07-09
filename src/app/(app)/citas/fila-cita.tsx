@@ -33,6 +33,7 @@ export function FilaCita({ apt }: { apt: AptRow & { notes: string | null } }) {
           </p>
           <p className="truncate text-xs text-slate-500">
             {apt.service_name}
+            {apt.staff_name ? ` · con ${apt.staff_name}` : ""}
             {apt.client_phone ? ` · ${apt.client_phone}` : ""}
           </p>
         </div>

@@ -13,11 +13,11 @@ export default async function CitasPage() {
   const supabase = await createClient();
   const hoy = hoyISO();
 
-  const [citasRes, serviciosRes] = await Promise.all([
+  const [citasRes, serviciosRes, equipoRes] = await Promise.all([
     supabase
       .from("appointments")
       .select(
-        "id, client_name, client_phone, date, time, service_name, status, materials_notes, notes"
+        "id, client_name, client_phone, date, time, service_name, status, materials_notes, notes, staff:staff_id(name)"
       )
       .eq("business_id", business.id)
       .gte("date", hoy)
@@ -29,9 +29,20 @@ export default async function CitasPage() {
       .eq("business_id", business.id)
       .eq("is_active", true)
       .order("sort_order"),
+    supabase
+      .from("staff")
+      .select("id, name")
+      .eq("business_id", business.id)
+      .eq("is_active", true)
+      .order("sort_order")
+      .order("created_at"),
   ]);
 
-  const citas = (citasRes.data ?? []) as Cita[];
+  // El embed staff:staff_id(name) llega como objeto anidado → se aplana
+  type RawCita = Cita & { staff: { name: string } | null };
+  const citas: Cita[] = ((citasRes.data ?? []) as unknown as RawCita[]).map(
+    ({ staff, ...c }) => ({ ...c, staff_name: staff?.name ?? null })
+  );
   const porDia = new Map<string, Cita[]>();
   for (const c of citas) {
     const grupo = porDia.get(c.date) ?? [];
@@ -51,6 +62,7 @@ export default async function CitasPage() {
         <NuevaCitaDialog
           businessId={business.id}
           services={serviciosRes.data ?? []}
+          equipo={equipoRes.data ?? []}
           hoy={hoy}
         />
       </div>

@@ -19,10 +19,13 @@ export async function huecosOcupados(
     p_date: date,
   });
   return (
-    (data as { start_time: string; duration_minutes: number }[] | null) ?? []
+    (data as
+      | { start_time: string; duration_minutes: number; staff_id: string | null }[]
+      | null) ?? []
   ).map((r) => ({
     time: r.start_time.slice(0, 5),
     duration: r.duration_minutes || 60,
+    staff_id: r.staff_id,
   }));
 }
 
@@ -33,19 +36,25 @@ export interface ReservaInput {
   full_name: string;
   email: string;
   phone: string;
+  staff_id: string | null; // null = me da igual / negocio sin equipo
 }
 
 export interface ReservaResult {
   ok?: true;
+  staff_name?: string | null;
   error?: string;
+  // El widget decide por código (no por texto) si vuelve al calendario
+  codigo?: string;
 }
 
 const ERRORES: Record<string, string> = {
   hueco_ocupado: "Justo se ha reservado esa hora. Elige otra, por favor.",
+  fuera_de_horario: "Esa hora queda fuera del horario. Elige otra, por favor.",
   fecha_pasada: "Esa fecha ya ha pasado.",
   datos_invalidos: "Revisa tus datos e inténtalo de nuevo.",
   negocio_no_encontrado: "Este negocio no está disponible ahora mismo.",
   servicio_no_encontrado: "Ese servicio ya no está disponible.",
+  trabajador_no_encontrado: "Ese profesional ya no está disponible. Elige otro, por favor.",
 };
 
 // Reserva desde la página pública: la RPC crea lead + cita pendiente +
@@ -65,6 +74,7 @@ export async function reservar(
     p_name: input.full_name,
     p_email: input.email,
     p_phone: input.phone,
+    p_staff_id: input.staff_id,
   });
 
   if (error) {
@@ -80,12 +90,16 @@ export async function reservar(
     business_address?: string | null;
     service_name?: string;
     duration_minutes?: number;
+    staff_name?: string | null;
     email_subject?: string | null;
     email_body?: string | null;
   };
 
   if (res.error) {
-    return { error: ERRORES[res.error] ?? ERRORES.datos_invalidos };
+    return {
+      error: ERRORES[res.error] ?? ERRORES.datos_invalidos,
+      codigo: res.error,
+    };
   }
 
   // Email de reserva: siempre sale si el cliente dio email (núcleo del
@@ -107,7 +121,7 @@ export async function reservar(
       negocio: res.business_name,
     };
 
-    const defaultBody = `Hola ${input.full_name},\n\nTu cita ha sido reservada con éxito. Aquí tienes los detalles:\n\nServicio: ${res.service_name || ""}\nFecha: ${fechaLarga}\nHora: ${input.time}\n\n${res.business_name}${res.business_phone ? `\nTeléfono: ${res.business_phone}` : ""}${res.business_address ? `\nDirección: ${res.business_address}` : ""}\n\n¡Te esperamos!`;
+    const defaultBody = `Hola ${input.full_name},\n\nTu cita ha sido reservada con éxito. Aquí tienes los detalles:\n\nServicio: ${res.service_name || ""}\nFecha: ${fechaLarga}\nHora: ${input.time}${res.staff_name ? `\nTe atenderá: ${res.staff_name}` : ""}\n\n${res.business_name}${res.business_phone ? `\nTeléfono: ${res.business_phone}` : ""}${res.business_address ? `\nDirección: ${res.business_address}` : ""}\n\n¡Te esperamos!`;
 
     const subject =
       renderTemplate(res.email_subject, vars) ||
@@ -140,5 +154,5 @@ export async function reservar(
     });
   }
 
-  return { ok: true };
+  return { ok: true, staff_name: res.staff_name ?? null };
 }

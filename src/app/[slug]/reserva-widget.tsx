@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useMemo, useState, useTransition } from "react";
-import { Check, ChevronLeft, ChevronRight, Clock } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Clock, User, Users } from "lucide-react";
 import {
   filtrarHuecosLibres,
   generarHuecos,
   horarioDelDia as horarioDelDiaLib,
+  huecosLibresEquipo,
   sinHuecosPasados,
   type DayHours,
   type Ocupacion,
@@ -21,6 +22,12 @@ export interface PublicService {
   image_url: string | null;
 }
 
+export interface PublicStaff {
+  id: string;
+  name: string;
+  working_hours: Record<string, DayHours> | null; // null = el del negocio
+}
+
 export type { DayHours };
 
 export interface PublicBusiness {
@@ -30,6 +37,7 @@ export interface PublicBusiness {
   primary_color: string;
   working_hours: Record<string, DayHours> | null;
   services: PublicService[];
+  staff: PublicStaff[];
   show_prices: boolean;
 }
 
@@ -54,27 +62,66 @@ function proximosDias(n: number): { iso: string; dia: string; num: string; mes: 
   return out;
 }
 
-type Paso = "servicio" | "calendario" | "datos" | "exito";
+type Paso = "servicio" | "equipo" | "calendario" | "datos" | "exito";
+
+// "cualquiera" = el cliente pulsó "Me da igual" (el negocio asigna)
+type Quien = PublicStaff | "cualquiera" | null;
 
 export function ReservaWidget({ business }: { business: PublicBusiness }) {
   const [paso, setPaso] = useState<Paso>("servicio");
   const [servicio, setServicio] = useState<PublicService | null>(null);
+  const [quien, setQuien] = useState<Quien>(null);
   const [fecha, setFecha] = useState<string | null>(null);
   const [hora, setHora] = useState<string | null>(null);
   const [ocupadas, setOcupadas] = useState<Ocupacion[]>([]);
   const [cargandoHuecos, setCargandoHuecos] = useState(false);
   const [datos, setDatos] = useState({ full_name: "", email: "", phone: "" });
   const [aceptaPrivacidad, setAceptaPrivacidad] = useState(false);
+  const [atendera, setAtendera] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [pending, startTransition] = useTransition();
 
   const color = business.primary_color || "#3B82F6";
   const dias = useMemo(() => proximosDias(14), []);
-  const pasoNum = paso === "servicio" ? 1 : paso === "calendario" ? 2 : 3;
+  // El paso "¿Con quién?" solo existe con 2+ trabajadores; con 1 o
+  // ninguno el widget se comporta como siempre (invisible para
+  // negocios de una persona).
+  const hayPasoEquipo = business.staff.length >= 2;
+  const totalPasos = hayPasoEquipo ? 4 : 3;
+  const pasoNum =
+    paso === "servicio"
+      ? 1
+      : paso === "equipo"
+        ? 2
+        : paso === "calendario"
+          ? totalPasos - 1
+          : totalPasos;
+
+  // Trabajadores que cuentan para los huecos: el elegido, o todos si
+  // "me da igual" (también con 1 solo trabajador, sin paso). Null = el
+  // negocio no tiene equipo y se usa el camino clásico.
+  const staffRelevante = useMemo(() => {
+    if (business.staff.length === 0) return null;
+    if (quien && quien !== "cualquiera") return [quien];
+    return business.staff;
+  }, [business.staff, quien]);
 
   const horarioDelDia = useCallback(
     (iso: string): DayHours => horarioDelDiaLib(iso, business.working_hours),
     [business.working_hours]
+  );
+
+  // Un día se puede elegir si lo trabaja alguien relevante
+  const diaAbierto = useCallback(
+    (iso: string): boolean =>
+      staffRelevante
+        ? staffRelevante.some(
+            (s) =>
+              horarioDelDiaLib(iso, s.working_hours ?? business.working_hours)
+                .open
+          )
+        : (horarioDelDia(iso).open ?? false),
+    [staffRelevante, business.working_hours, horarioDelDia]
   );
 
   const elegirFecha = (iso: string) => {
@@ -88,11 +135,23 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
 
   const huecosLibres = useMemo(() => {
     if (!fecha) return [];
-    const h = horarioDelDia(fecha);
-    if (!h.open) return [];
     const duracion = servicio?.duration_minutes || 60;
-    const todos = generarHuecos(h.start || "09:00", h.end || "19:00", duracion);
-    const libres = filtrarHuecosLibres(todos, duracion, ocupadas);
+    let libres: string[];
+    if (staffRelevante) {
+      const equipoDia = staffRelevante.map((s) => ({
+        id: s.id,
+        hours: horarioDelDiaLib(
+          fecha,
+          s.working_hours ?? business.working_hours
+        ),
+      }));
+      libres = huecosLibresEquipo(equipoDia, duracion, ocupadas);
+    } else {
+      const h = horarioDelDia(fecha);
+      if (!h.open) return [];
+      const todos = generarHuecos(h.start || "09:00", h.end || "19:00", duracion);
+      libres = filtrarHuecosLibres(todos, duracion, ocupadas);
+    }
     // Si el día elegido es hoy, las horas que ya pasaron no se ofrecen
     const ahora = new Intl.DateTimeFormat("es-ES", {
       timeZone: "Europe/Madrid",
@@ -101,7 +160,7 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
       hour12: false,
     }).format(new Date());
     return sinHuecosPasados(libres, fecha === dias[0].iso, ahora);
-  }, [fecha, ocupadas, servicio, horarioDelDia, dias]);
+  }, [fecha, ocupadas, servicio, staffRelevante, business.working_hours, horarioDelDia, dias]);
 
   const confirmarReserva = () =>
     startTransition(async () => {
@@ -111,17 +170,19 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
         service_id: servicio.id,
         date: fecha,
         time: hora,
+        staff_id: quien && quien !== "cualquiera" ? quien.id : null,
         ...datos,
       });
       if (r.error) {
         setError(r.error);
-        if (r.error.includes("esa hora")) {
+        if (r.codigo === "hueco_ocupado" || r.codigo === "fuera_de_horario") {
           setHora(null);
           setPaso("calendario");
           const res = await huecosOcupados(business.slug, fecha);
           setOcupadas(res);
         }
       } else {
+        setAtendera(r.staff_name ?? null);
         setPaso("exito");
       }
     });
@@ -134,7 +195,13 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
             {paso !== "servicio" ? (
               <button
                 onClick={() =>
-                  setPaso(paso === "datos" ? "calendario" : "servicio")
+                  setPaso(
+                    paso === "datos"
+                      ? "calendario"
+                      : paso === "calendario" && hayPasoEquipo
+                        ? "equipo"
+                        : "servicio"
+                  )
                 }
                 className="flex items-center gap-1 text-sm font-medium text-slate-500 hover:text-slate-700"
               >
@@ -146,11 +213,11 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
               </span>
             )}
             <span className="text-xs font-semibold text-slate-400">
-              Paso {pasoNum} de 3
+              Paso {pasoNum} de {totalPasos}
             </span>
           </div>
           <div className="flex gap-1.5">
-            {[1, 2, 3].map((n) => (
+            {Array.from({ length: totalPasos }, (_, i) => i + 1).map((n) => (
               <div
                 key={n}
                 className="h-1.5 flex-1 rounded-full transition-colors"
@@ -174,9 +241,10 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
                 key={s.id}
                 onClick={() => {
                   setServicio(s);
+                  setQuien(null);
                   setFecha(null);
                   setHora(null);
-                  setPaso("calendario");
+                  setPaso(hayPasoEquipo ? "equipo" : "calendario");
                 }}
                 className="group flex w-full items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-200 hover:shadow-md"
               >
@@ -216,6 +284,49 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
         </div>
       )}
 
+      {paso === "equipo" && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-bold text-slate-900">¿Con quién?</h2>
+          {(
+            [
+              null,
+              ...business.staff,
+            ] as (PublicStaff | null)[]
+          ).map((s) => (
+            <button
+              key={s?.id ?? "cualquiera"}
+              onClick={() => {
+                setQuien(s ?? "cualquiera");
+                setFecha(null);
+                setHora(null);
+                setPaso("calendario");
+              }}
+              className="group flex w-full items-center gap-3 rounded-2xl border border-slate-100 bg-white p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-slate-200 hover:shadow-md"
+            >
+              <span
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+                style={{ backgroundColor: `${color}15`, color }}
+              >
+                {s ? <User size={18} /> : <Users size={18} />}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="font-bold text-slate-900">
+                  {s ? s.name : "Me da igual"}
+                </p>
+                {!s && (
+                  <p className="text-sm text-slate-500">
+                    Te atenderá la primera persona libre
+                  </p>
+                )}
+              </div>
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-300 transition-colors group-hover:text-slate-500">
+                <ChevronRight size={18} />
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {paso === "calendario" && (
         <div className="space-y-4">
           <h2 className="text-lg font-bold text-slate-900">
@@ -228,7 +339,7 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
           )}
           <div className="flex gap-2 overflow-x-auto pb-1">
             {dias.map((d) => {
-              const abierto = horarioDelDia(d.iso).open;
+              const abierto = diaAbierto(d.iso);
               const activo = fecha === d.iso;
               return (
                 <button
@@ -308,6 +419,7 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
                   month: "long",
                 }).format(new Date(`${fecha}T12:00:00`))}{" "}
               · {hora}
+              {quien && quien !== "cualquiera" ? ` · con ${quien.name}` : ""}
             </p>
           </div>
           <input
@@ -368,6 +480,7 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
           <h2 className="text-xl font-bold text-slate-900">¡Reserva recibida!</h2>
           <p className="text-sm text-slate-500">
             {servicio?.name} · {hora}
+            {atendera ? ` · con ${atendera}` : ""}
             <br />
             {business.name} te confirmará la cita en breve
             {datos.email ? " — te hemos enviado los detalles por email" : ""}.
