@@ -1,0 +1,370 @@
+<style>
+  :root {
+    --navy: #0F172A;
+    --coral: #FF6B4A;
+    --coral-tint: #FDECE7;
+    --paper: #FBF7F5;
+    --card: #FFFFFF;
+    --ink: #241E1C;
+    --ink-muted: #7A716C;
+    --border: #EEE6E1;
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #17130F;
+    --card: #241D19;
+    --ink: #F2EAE5;
+    --ink-muted: #B3A9A3;
+    --border: #362C26;
+    --coral-tint: #3A241C;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #17130F;
+      --card: #241D19;
+      --ink: #F2EAE5;
+      --ink-muted: #B3A9A3;
+      --border: #362C26;
+      --coral-tint: #3A241C;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2 {
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
+    font-weight: 700;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  a:focus-visible, button:focus-visible {
+    outline: 2px solid var(--coral);
+    outline-offset: 3px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .btn-primary, .btn-secondary {
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+    .btn-primary:hover, .btn-secondary:hover { transform: translateY(-1px); }
+  }
+
+  /* ---------- Hero y CTA final: bloques de marca, ancla fija navy+coral ---------- */
+
+  .hero, .cta-final {
+    position: relative;
+    background:
+      radial-gradient(120% 100% at 100% -10%, rgba(255,107,74,0.28), transparent 55%),
+      radial-gradient(120% 100% at -10% 110%, rgba(255,107,74,0.18), transparent 55%),
+      var(--navy);
+    color: #F4F1EE;
+    padding: 64px 24px;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .hero { padding-top: 56px; }
+
+  .eyebrow {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #FFB4A1;
+    margin-bottom: 16px;
+  }
+
+  .hero h1, .cta-final h2 {
+    font-size: clamp(1.6rem, 4.5vw, 2.35rem);
+    line-height: 1.2;
+    max-width: 640px;
+    margin: 0 auto 16px;
+  }
+
+  .hero .lede, .cta-final .lede {
+    color: #CBC3BC;
+    font-size: 1.05rem;
+    max-width: 480px;
+    margin: 0 auto 32px;
+  }
+
+  .cta-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    position: relative;
+  }
+
+  .btn-primary, .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 26px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    text-decoration: none;
+    min-height: 44px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+
+  .btn-primary { background: var(--coral); color: #1A0D08; }
+  .btn-secondary { background: rgba(255,255,255,0.1); color: #F4F1EE; border: 1px solid rgba(255,255,255,0.28); }
+
+  /* ---------- Secciones de contenido: siguen el tema claro/oscuro ---------- */
+
+  section {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 56px 24px;
+  }
+
+  .section-label {
+    display: block;
+    width: 32px;
+    height: 3px;
+    background: var(--coral);
+    border-radius: 2px;
+    margin: 0 auto 20px;
+  }
+
+  section h2 {
+    font-size: 1.5rem;
+    color: var(--ink);
+    text-align: center;
+    margin-bottom: 12px;
+  }
+
+  section > .lede {
+    color: var(--ink-muted);
+    text-align: center;
+    max-width: 480px;
+    margin: 0 auto 28px;
+    font-size: 0.98rem;
+  }
+
+  .puntos {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .puntos li {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    font-size: 1rem;
+  }
+
+  .puntos .marca {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  .problema .marca { background: var(--coral-tint); color: var(--coral); }
+  .solucion .marca { background: var(--coral); color: #1A0D08; }
+
+  .como-funciona ol {
+    list-style: none;
+    counter-reset: paso;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .como-funciona li {
+    counter-increment: paso;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .como-funciona li::before {
+    content: counter(paso);
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: #FFB4A1;
+    font-family: Georgia, serif;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .como-funciona p { margin: 4px 0 0; }
+
+  .capturas-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    margin-top: 8px;
+  }
+
+  @media (min-width: 640px) {
+    .capturas-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .capturas-grid figure {
+    margin: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px;
+  }
+
+  .capturas-grid img {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 10px;
+    display: block;
+  }
+
+  .capturas-grid figcaption {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 0.82rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  .precio {
+    text-align: center;
+    background: var(--coral-tint);
+    border-radius: 20px;
+    padding: 40px 24px;
+    max-width: 700px;
+    margin: 0 auto;
+  }
+
+  .precio-cifra {
+    font-family: Georgia, serif;
+    font-size: 2.75rem;
+    font-weight: 700;
+    color: var(--coral);
+    margin: 0 0 8px;
+  }
+
+  .precio .lede { margin-bottom: 0; }
+
+  footer.legal {
+    text-align: center;
+    padding: 24px;
+    font-size: 0.8rem;
+    color: var(--ink-muted);
+  }
+</style>
+
+<!-- Sección 1: Hero -->
+<header class="hero">
+  <span class="eyebrow">AutoFlow AI</span>
+  <h1>¿Cuántas citas se te escapan por no contestar el WhatsApp a tiempo?</h1>
+  <p class="lede">AutoFlow AI confirma, recuerda y hace seguimiento de tus citas solo — para que tú te dediques a tu negocio, no al teléfono.</p>
+  <div class="cta-row">
+    <a class="btn-primary" href="https://wa.me/34626786207?text=Hola%2C%20quiero%20saber%20m%C3%A1s%20sobre%20AutoFlow%20AI%20para%20mi%20negocio">💬 Escríbeme por WhatsApp</a>
+    <a class="btn-secondary" href="tel:+34626786207">📞 Llamar</a>
+  </div>
+</header>
+
+<!-- Sección 2: Problema -->
+<section class="problema">
+  <span class="section-label"></span>
+  <h2>Si esto te suena, no eres el único</h2>
+  <ul class="puntos">
+    <li><span class="marca">!</span><span>Contestas el WhatsApp tarde y el cliente ya reservó en otro sitio.</span></li>
+    <li><span class="marca">!</span><span>Pasas horas llamando uno a uno para confirmar las citas del día siguiente.</span></li>
+    <li><span class="marca">!</span><span>Un cliente se olvida de su cita y pierdes ese hueco sin que nadie te avise.</span></li>
+    <li><span class="marca">!</span><span>Sientes que el negocio te controla a ti, en vez de al revés.</span></li>
+  </ul>
+</section>
+
+<!-- Sección 3: Solución -->
+<section class="solucion">
+  <span class="section-label"></span>
+  <h2>AutoFlow AI se encarga de todo eso por ti</h2>
+  <ul class="puntos">
+    <li><span class="marca">✓</span><span>Tu página de reservas está siempre abierta — el cliente reserva solo, a cualquier hora, sin esperar tu respuesta.</span></li>
+    <li><span class="marca">✓</span><span>Los recordatorios salen solos por WhatsApp y email 24h antes — sin que tengas que llamar a nadie.</span></li>
+    <li><span class="marca">✓</span><span>Si alguien no confirma, se lo recordamos automáticamente.</span></li>
+    <li><span class="marca">✓</span><span>Cada mañana ves tu día completo en un solo panel: quién viene, a qué hora y qué necesita.</span></li>
+  </ul>
+</section>
+
+<!-- Sección 4: Cómo funciona -->
+<section class="como-funciona">
+  <span class="section-label"></span>
+  <h2>Empezar es más fácil de lo que crees</h2>
+  <ol>
+    <li><p>Yo lo instalo y lo configuro todo por ti — tú no tocas nada técnico.</p></li>
+    <li><p>Cada mañana entras y ves tu panel del día: citas, avisos, todo listo.</p></li>
+    <li><p>Tus clientes reservan solos desde el móvil, sin llamarte.</p></li>
+  </ol>
+</section>
+
+<!-- Sección 5: Capturas reales -->
+<section class="capturas">
+  <span class="section-label"></span>
+  <h2>Así se ve de verdad</h2>
+  <p class="lede">Sin maquetas, sin promesas — esto es lo que va a usar tu negocio desde el primer día.</p>
+  <div class="capturas-grid">
+    <figure>
+      <img src="{{IMG_RESERVAS}}" alt="Página pública de reservas de un negocio real en AutoFlow AI" />
+      <figcaption>Tu página de reservas</figcaption>
+    </figure>
+    <figure>
+      <img src="{{IMG_HOY}}" alt="Panel del día de AutoFlow AI con una cita real" />
+      <figcaption>Tu panel del día</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- Sección 6: Precio -->
+<section class="precio-wrap">
+  <div class="precio">
+    <p class="precio-cifra">Desde 45€/mes</p>
+    <p class="lede">Sin permanencia, sin letra pequeña, sin lío técnico. Todo incluido: reservas, recordatorios y seguimiento automático.</p>
+  </div>
+</section>
+
+<!-- Sección 7: CTA final -->
+<footer class="cta-final">
+  <h2>¿Hablamos de tu negocio?</h2>
+  <div class="cta-row">
+    <a class="btn-primary" href="https://wa.me/34626786207?text=Hola%2C%20quiero%20saber%20m%C3%A1s%20sobre%20AutoFlow%20AI%20para%20mi%20negocio">💬 Escríbeme por WhatsApp</a>
+    <a class="btn-secondary" href="tel:+34626786207">📞 Llamar</a>
+  </div>
+</footer>
+
+<p class="legal">AutoFlow AI — reservas, recordatorios y seguimiento automático para negocios de barrio.</p>
