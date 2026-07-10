@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { hoyISO } from "@/lib/dates";
 import {
   APPOINTMENT_STATUS_TO_STAGE,
   completeService,
@@ -47,11 +48,12 @@ export async function confirmarCita(
   return { ok: true };
 }
 
-// "Faena terminada": cita completada, lead ganado y (opcional) aviso de
-// recogida al cliente.
+// "Faena terminada": cita completada, lead ganado, (opcional) aviso de
+// recogida al cliente y (opcional) cobro apuntado como factura cobrada.
 export async function faenaTerminada(
   appointmentId: string,
-  avisarCliente: boolean
+  avisarCliente: boolean,
+  importeCobrado: number | null
 ): Promise<ActionResult> {
   const supabase = await createClient();
 
@@ -77,6 +79,24 @@ export async function faenaTerminada(
       .eq("id", apt.lead_id);
   }
 
+  // Cobro apuntado en el mismo gesto: factura ya cobrada con fecha de hoy.
+  let cobroFallido = false;
+  if (importeCobrado != null && Number.isFinite(importeCobrado) && importeCobrado > 0) {
+    const total = Math.round(importeCobrado * 100) / 100;
+    const { error: errFactura } = await supabase.from("invoices").insert({
+      business_id: apt.business_id,
+      lead_id: apt.lead_id,
+      client_name: apt.client_name,
+      client_email: apt.client_email,
+      client_phone: apt.client_phone,
+      items: [{ description: apt.service_name || "Servicio", amount: total }],
+      total,
+      status: "cobrada",
+      paid_date: hoyISO(),
+    });
+    cobroFallido = !!errFactura;
+  }
+
   await completeService(
     supabase,
     apt.business_id,
@@ -92,6 +112,13 @@ export async function faenaTerminada(
 
   revalidatePath("/hoy");
   revalidatePath("/citas");
+  revalidatePath("/dinero");
+  if (cobroFallido) {
+    return {
+      error:
+        "La faena se cerró, pero el cobro no se pudo apuntar. Añádelo a mano en Dinero.",
+    };
+  }
   return { ok: true };
 }
 

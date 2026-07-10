@@ -42,7 +42,7 @@ export default async function HoyPage() {
       supabase
         .from("appointments")
         .select(
-          "id, client_name, client_phone, date, time, service_name, status, materials_notes, staff:staff_id(name)"
+          "id, client_name, client_phone, date, time, service_name, status, materials_notes, staff:staff_id(name), service:service_id(price)"
         )
         .eq("business_id", business.id)
         .eq("date", hoy)
@@ -70,12 +70,17 @@ export default async function HoyPage() {
     ]);
 
   const tareas = (tareasRes.data ?? []) as TaskRow[];
-  // El embed staff:staff_id(name) llega como objeto anidado → se aplana
-  type RawApt = AptRow & { staff: { name: string } | null };
+  // Los embeds staff:staff_id(name) y service:service_id(price) llegan
+  // como objetos anidados → se aplanan
+  type RawApt = AptRow & {
+    staff: { name: string } | null;
+    service?: { price: number | null } | null;
+  };
   const conStaff = (rows: unknown): AptRow[] =>
-    ((rows ?? []) as RawApt[]).map(({ staff, ...c }) => ({
+    ((rows ?? []) as RawApt[]).map(({ staff, service, ...c }) => ({
       ...c,
       staff_name: staff?.name ?? null,
+      service_price: service?.price ?? null,
     }));
   const citasHoy = conStaff(citasHoyRes.data);
   const pendientes = conStaff(pendientesRes.data);

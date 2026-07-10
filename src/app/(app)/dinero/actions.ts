@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { hoyISO } from "@/lib/dates";
+import { parsearImporte } from "@/lib/importe";
 
 export interface ActionResult {
   ok?: true;
@@ -21,9 +22,8 @@ export async function crearFactura(
   input: FacturaInput
 ): Promise<ActionResult> {
   if (!input.client_name.trim()) return { error: "El cliente es obligatorio." };
-  const total = parseFloat(input.total);
-  if (!Number.isFinite(total) || total <= 0)
-    return { error: "El importe debe ser mayor que 0." };
+  const total = parsearImporte(input.total);
+  if (total === null) return { error: "El importe debe ser mayor que 0." };
 
   const supabase = await createClient();
   const { error } = await supabase.from("invoices").insert({
@@ -80,9 +80,8 @@ export async function crearGasto(
 ): Promise<ActionResult> {
   if (!input.description.trim())
     return { error: "La descripción es obligatoria." };
-  const amount = parseFloat(input.amount);
-  if (!Number.isFinite(amount) || amount <= 0)
-    return { error: "El importe debe ser mayor que 0." };
+  const amount = parsearImporte(input.amount);
+  if (amount === null) return { error: "El importe debe ser mayor que 0." };
 
   const supabase = await createClient();
   const { error } = await supabase.from("expenses").insert({

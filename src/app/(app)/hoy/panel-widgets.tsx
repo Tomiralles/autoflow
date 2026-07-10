@@ -6,7 +6,9 @@ import { CheckCheck, CheckCircle, Package } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { horaCorta, fechaCortaES } from "@/lib/dates";
+import { parsearImporte } from "@/lib/importe";
 import { completarTarea, confirmarCita, faenaTerminada } from "./actions";
 
 export interface AptRow {
@@ -19,6 +21,7 @@ export interface AptRow {
   status: string;
   materials_notes: string | null;
   staff_name?: string | null; // quién la atiende (negocios con equipo)
+  service_price?: number | null; // precio del servicio, para prefijar el cobro
 }
 
 const ESTADO_BADGE: Record<string, { label: string; className: string }> = {
@@ -85,22 +88,33 @@ export function CitaDeHoy({
   const [pending, startTransition] = useTransition();
   const [cerrando, setCerrando] = useState(false);
   const [avisar, setAvisar] = useState(avisoPorDefecto);
+  const [importe, setImporte] = useState(
+    apt.service_price != null ? String(apt.service_price) : ""
+  );
 
   const cerrada = ["completada", "cancelada", "no_asistio"].includes(apt.status);
 
-  const cerrar = () =>
+  const cerrar = () => {
+    const cobro = parsearImporte(importe);
+    if (importe.trim() !== "" && cobro === null) {
+      toast.error("El importe no es válido. Déjalo vacío si no cobras nada.");
+      return;
+    }
     startTransition(async () => {
-      const r = await faenaTerminada(apt.id, avisar);
+      const r = await faenaTerminada(apt.id, avisar, cobro);
       if (r.error) toast.error(r.error);
       else {
         toast.success(
-          avisar
-            ? "Faena cerrada y cliente avisado"
-            : "Faena cerrada"
+          cobro !== null
+            ? `Faena cerrada · ${cobro.toLocaleString("es")}€ apuntados`
+            : avisar
+              ? "Faena cerrada y cliente avisado"
+              : "Faena cerrada"
         );
         setCerrando(false);
       }
     });
+  };
 
   return (
     <div className="p-4">
@@ -132,6 +146,22 @@ export function CitaDeHoy({
       {!cerrada &&
         (cerrando ? (
           <div className="mt-2 ml-16 space-y-2 rounded-lg border border-green-100 bg-green-50 p-3">
+            <label className="block text-xs text-slate-700">
+              ¿Cuánto has cobrado?
+              <span className="mt-1 flex items-center gap-1.5">
+                <Input
+                  value={importe}
+                  onChange={(e) => setImporte(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="0"
+                  className="h-9 w-24 bg-white text-sm"
+                />
+                <span className="text-sm font-medium text-slate-600">€</span>
+                <span className="text-xs text-slate-400">
+                  Vacío = no apuntar nada
+                </span>
+              </span>
+            </label>
             <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-700">
               <Checkbox
                 checked={avisar}
