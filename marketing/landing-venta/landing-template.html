@@ -1,158 +1,293 @@
+<title>AutoFlow AI — Tu negocio en piloto automático</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
+  /* Tema oscuro único y deliberado: la página es el escaparate "tech premium"
+     de AutoFlow. No hay variante clara. */
   :root {
-    --navy: #0F172A;
+    --bg: #0A0E1C;
+    --bg-raised: #111930;
+    --glass: rgba(151, 168, 199, 0.07);
+    --glass-strong: rgba(151, 168, 199, 0.12);
+    --line: rgba(151, 168, 199, 0.16);
+    --line-bright: rgba(151, 168, 199, 0.3);
+    --ink: #EEF2F9;
+    --muted: #98A6C0;
     --coral: #FF6B4A;
-    --coral-tint: #FDECE7;
-    --paper: #FBF7F5;
-    --card: #FFFFFF;
-    --ink: #241E1C;
-    --ink-muted: #7A716C;
-    --border: #EEE6E1;
-  }
-
-  :root[data-theme="dark"] {
-    --paper: #17130F;
-    --card: #241D19;
-    --ink: #F2EAE5;
-    --ink-muted: #B3A9A3;
-    --border: #362C26;
-    --coral-tint: #3A241C;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --paper: #17130F;
-      --card: #241D19;
-      --ink: #F2EAE5;
-      --ink-muted: #B3A9A3;
-      --border: #362C26;
-      --coral-tint: #3A241C;
-    }
+    --coral-deep: #E14E2D;
+    --coral-glow: rgba(255, 107, 74, 0.35);
+    --coral-tint: rgba(255, 107, 74, 0.12);
+    --indigo-glow: rgba(67, 86, 224, 0.22);
+    --wa-green: #1FA855;
+    --mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+    color-scheme: dark;
   }
 
   * { box-sizing: border-box; }
 
+  html { scroll-behavior: smooth; }
+
   body {
     margin: 0;
-    background: var(--paper);
+    background: var(--bg);
     color: var(--ink);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    line-height: 1.55;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
 
   h1, h2 {
-    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", Palatino, serif;
-    font-weight: 700;
-    text-wrap: balance;
     margin: 0;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.12;
+    text-wrap: balance;
   }
+
+  p { margin: 0; }
 
   a:focus-visible, button:focus-visible {
     outline: 2px solid var(--coral);
     outline-offset: 3px;
+    border-radius: 4px;
   }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .btn-primary, .btn-secondary {
-      transition: transform 0.15s ease, opacity 0.15s ease;
-    }
-    .btn-primary:hover, .btn-secondary:hover { transform: translateY(-1px); }
-  }
-
-  /* ---------- Hero y CTA final: bloques de marca, ancla fija navy+coral ---------- */
-
-  .hero, .cta-final {
-    position: relative;
-    background:
-      radial-gradient(120% 100% at 100% -10%, rgba(255,107,74,0.28), transparent 55%),
-      radial-gradient(120% 100% at -10% 110%, rgba(255,107,74,0.18), transparent 55%),
-      var(--navy);
-    color: #F4F1EE;
-    padding: 64px 24px;
-    text-align: center;
-    overflow: hidden;
-  }
-
-  .hero { padding-top: 56px; }
 
   .eyebrow {
-    display: inline-block;
-    font-size: 0.75rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
-    color: #FFB4A1;
-    margin-bottom: 16px;
+    color: var(--coral);
   }
 
-  .hero h1, .cta-final h2 {
-    font-size: clamp(1.6rem, 4.5vw, 2.35rem);
-    line-height: 1.2;
-    max-width: 640px;
-    margin: 0 auto 16px;
+  /* ---------- Hero ---------- */
+
+  .hero {
+    position: relative;
+    overflow: hidden;
+    padding: 72px 24px 88px;
+    border-bottom: 1px solid var(--line);
+    /* malla de puntos, desvanecida hacia abajo */
+    background-image: radial-gradient(rgba(151,168,199,0.13) 1px, transparent 1px);
+    background-size: 26px 26px;
   }
 
-  .hero .lede, .cta-final .lede {
-    color: #CBC3BC;
-    font-size: 1.05rem;
-    max-width: 480px;
-    margin: 0 auto 32px;
+  .aurora {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+      radial-gradient(46% 60% at 78% 18%, var(--coral-glow), transparent 70%),
+      radial-gradient(52% 64% at 12% 80%, var(--indigo-glow), transparent 70%),
+      radial-gradient(38% 46% at 40% -10%, rgba(67, 86, 224, 0.14), transparent 70%),
+      linear-gradient(180deg, transparent 0%, var(--bg) 96%);
   }
+
+  .hero-inner {
+    position: relative;
+    max-width: 1040px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 56px;
+    align-items: center;
+  }
+
+  @media (min-width: 880px) {
+    .hero-inner { grid-template-columns: 1.05fr 0.95fr; gap: 32px; }
+    .hero { padding: 104px 24px 116px; }
+    .phone { width: 296px; }
+  }
+
+  .hero-copy { text-align: center; }
+  @media (min-width: 880px) { .hero-copy { text-align: left; } }
+
+  .hero h1 {
+    font-size: clamp(2.05rem, 5.4vw, 3.15rem);
+    margin: 18px 0 20px;
+  }
+
+  .hero h1 em {
+    font-style: normal;
+    background: linear-gradient(100deg, var(--coral) 20%, #FFA37E 80%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .hero .lede {
+    color: var(--muted);
+    font-size: 1.08rem;
+    max-width: 46ch;
+    margin: 0 auto 34px;
+  }
+  @media (min-width: 880px) { .hero .lede { margin-left: 0; } }
 
   .cta-row {
     display: flex;
     gap: 12px;
-    justify-content: center;
     flex-wrap: wrap;
-    position: relative;
+    justify-content: center;
   }
+  @media (min-width: 880px) { .cta-row { justify-content: flex-start; } }
 
   .btn-primary, .btn-secondary {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 14px 26px;
-    border-radius: 10px;
-    font-weight: 700;
+    gap: 9px;
+    padding: 15px 28px;
+    min-height: 48px;
+    border-radius: 12px;
     font-size: 1rem;
+    font-weight: 700;
     text-decoration: none;
-    min-height: 44px;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    letter-spacing: -0.01em;
   }
 
-  .btn-primary { background: var(--coral); color: #1A0D08; }
-  .btn-secondary { background: rgba(255,255,255,0.1); color: #F4F1EE; border: 1px solid rgba(255,255,255,0.28); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--coral) 0%, var(--coral-deep) 100%);
+    color: #FFF6F3;
+    box-shadow: 0 8px 28px -8px var(--coral-glow), inset 0 1px 0 rgba(255,255,255,0.25);
+  }
 
-  /* ---------- Secciones de contenido: siguen el tema claro/oscuro ---------- */
+  .btn-secondary {
+    background: var(--glass);
+    color: var(--ink);
+    border: 1px solid var(--line-bright);
+  }
+
+  .trust-row {
+    display: flex;
+    gap: 8px 22px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 26px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+  @media (min-width: 880px) { .trust-row { justify-content: flex-start; } }
+  .trust-row span::before { content: "✓ "; color: var(--coral); }
+
+  /* ---------- Mockup de móvil + notificaciones flotantes ---------- */
+
+  .stage {
+    position: relative;
+    width: min(100%, 400px);
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    padding: 18px 0 26px;
+  }
+
+  .phone {
+    position: relative;
+    width: clamp(220px, 62vw, 268px);
+    border-radius: 40px;
+    padding: 10px;
+    background: linear-gradient(160deg, #232D45 0%, #131A2E 60%);
+    border: 1px solid var(--line-bright);
+    box-shadow:
+      0 40px 80px -24px rgba(0, 0, 0, 0.7),
+      0 0 90px -30px var(--coral-glow);
+  }
+
+  .phone::before {
+    /* notch */
+    content: "";
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 86px;
+    height: 17px;
+    border-radius: 9px;
+    background: #0B1120;
+    z-index: 2;
+  }
+
+  .phone img {
+    display: block;
+    width: 100%;
+    border-radius: 31px;
+    border: 1px solid rgba(151,168,199,0.1);
+  }
+
+  .float-card {
+    position: absolute;
+    z-index: 3;
+    max-width: 200px;
+    padding: 11px 13px;
+    border-radius: 14px;
+    background: rgba(17, 25, 48, 0.88);
+    border: 1px solid var(--line-bright);
+    box-shadow: 0 18px 44px -14px rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(8px);
+    font-size: 0.76rem;
+    line-height: 1.45;
+    text-align: left;
+  }
+
+  .float-card .fc-head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-weight: 700;
+    font-size: 0.72rem;
+    margin-bottom: 4px;
+  }
+
+  .fc-dot {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.66rem;
+  }
+
+  .float-card.wa { top: 8%; left: -4%; }
+  .float-card.wa .fc-dot { background: var(--wa-green); color: #EAFBF1; }
+  .float-card.wa .fc-head { color: #7BE0A3; }
+
+  .float-card.ok { bottom: 7%; right: -4%; }
+  .float-card.ok .fc-dot { background: var(--coral); color: #FFF3EF; }
+  .float-card.ok .fc-head { color: #FFA37E; }
+
+  .float-card .fc-body { color: var(--muted); }
+  .float-card .fc-body strong { color: var(--ink); font-weight: 600; }
+
+  @media (min-width: 880px) {
+    .float-card { max-width: 216px; font-size: 0.8rem; }
+    .float-card.wa { left: -14%; top: 10%; }
+    .float-card.ok { right: -12%; bottom: 9%; }
+  }
+
+  /* ---------- Secciones de contenido ---------- */
 
   section {
-    max-width: 700px;
+    max-width: 720px;
     margin: 0 auto;
-    padding: 56px 24px;
+    padding: 72px 24px 8px;
   }
 
-  .section-label {
-    display: block;
-    width: 32px;
-    height: 3px;
-    background: var(--coral);
-    border-radius: 2px;
-    margin: 0 auto 20px;
+  section:last-of-type { padding-bottom: 72px; }
+
+  .sec-head { text-align: center; margin-bottom: 34px; }
+
+  .sec-head h2 {
+    font-size: clamp(1.45rem, 3.4vw, 1.9rem);
+    margin-top: 12px;
   }
 
-  section h2 {
-    font-size: 1.5rem;
-    color: var(--ink);
-    text-align: center;
-    margin-bottom: 12px;
-  }
-
-  section > .lede {
-    color: var(--ink-muted);
-    text-align: center;
-    max-width: 480px;
-    margin: 0 auto 28px;
+  .sec-head .lede {
+    color: var(--muted);
+    max-width: 52ch;
+    margin: 12px auto 0;
     font-size: 0.98rem;
   }
 
@@ -162,146 +297,273 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
   }
 
   .puntos li {
     display: flex;
     gap: 14px;
     align-items: flex-start;
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 18px 20px;
-    font-size: 1rem;
+    padding: 17px 19px;
+    border-radius: 15px;
+    background: var(--glass);
+    border: 1px solid var(--line);
+    font-size: 0.98rem;
   }
 
   .puntos .marca {
     flex-shrink: 0;
     width: 28px;
     height: 28px;
-    border-radius: 50%;
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     font-weight: 700;
+    font-family: var(--mono);
   }
 
-  .problema .marca { background: var(--coral-tint); color: var(--coral); }
-  .solucion .marca { background: var(--coral); color: #1A0D08; }
+  .problema .marca { background: var(--glass-strong); color: var(--muted); }
+  .solucion .marca {
+    background: var(--coral-tint);
+    color: var(--coral);
+    box-shadow: inset 0 0 0 1px rgba(255, 107, 74, 0.35);
+  }
+  .solucion .puntos li { border-color: rgba(255, 107, 74, 0.2); }
 
-  .como-funciona ol {
+  /* ---------- Cómo funciona: pasos con línea conectora ---------- */
+
+  .pasos {
     list-style: none;
     counter-reset: paso;
     margin: 0;
     padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+    position: relative;
   }
 
-  .como-funciona li {
+  .pasos::before {
+    content: "";
+    position: absolute;
+    left: 19px;
+    top: 20px;
+    bottom: 20px;
+    width: 1px;
+    background: linear-gradient(180deg, var(--coral-glow), var(--line) 70%);
+  }
+
+  .pasos li {
     counter-increment: paso;
+    position: relative;
     display: flex;
-    gap: 16px;
+    gap: 18px;
     align-items: flex-start;
+    padding: 14px 0;
   }
 
-  .como-funciona li::before {
-    content: counter(paso);
+  .pasos li::before {
+    content: counter(paso, decimal-leading-zero);
+    position: relative;
+    z-index: 1;
     flex-shrink: 0;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    background: var(--navy);
-    color: #FFB4A1;
-    font-family: Georgia, serif;
+    width: 40px;
+    height: 40px;
+    border-radius: 13px;
+    background: var(--bg-raised);
+    border: 1px solid rgba(255, 107, 74, 0.4);
+    color: var(--coral);
+    font-family: var(--mono);
+    font-size: 0.8rem;
     font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 0 22px -6px var(--coral-glow);
   }
 
-  .como-funciona p { margin: 4px 0 0; }
+  .pasos p { margin-top: 8px; font-size: 0.99rem; }
+  .pasos p strong { color: var(--ink); }
+  .pasos p { color: var(--muted); }
 
-  .capturas-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 20px;
-    margin-top: 8px;
-  }
+  /* ---------- Captura del panel: marco de navegador ---------- */
 
-  @media (min-width: 640px) {
-    .capturas-grid { grid-template-columns: 1fr 1fr; }
-  }
+  .capturas { max-width: 860px; }
 
-  .capturas-grid figure {
-    margin: 0;
-    background: var(--card);
-    border: 1px solid var(--border);
+  .browser {
     border-radius: 16px;
-    padding: 14px;
+    overflow: hidden;
+    background: var(--bg-raised);
+    border: 1px solid var(--line-bright);
+    box-shadow:
+      0 34px 70px -26px rgba(0, 0, 0, 0.7),
+      0 0 80px -34px var(--coral-glow);
   }
 
-  .capturas-grid img {
-    width: 100%;
-    max-width: 100%;
-    border-radius: 10px;
-    display: block;
+  .browser-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--line);
   }
 
-  .capturas-grid figcaption {
+  .browser-bar i {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--glass-strong);
+  }
+  .browser-bar i:first-child { background: rgba(255, 107, 74, 0.55); }
+
+  .browser-bar .url {
+    margin-left: 10px;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    background: var(--glass);
+    border-radius: 7px;
+    padding: 4px 12px;
+  }
+
+  .browser img { display: block; width: 100%; }
+
+  /* ---------- Precio ---------- */
+
+  .precio-card {
+    position: relative;
+    border-radius: 22px;
+    padding: 1px;
+    background: linear-gradient(140deg, rgba(255,107,74,0.65), rgba(151,168,199,0.18) 45%, rgba(67,86,224,0.4));
+  }
+
+  .precio-inner {
+    border-radius: 21px;
+    background:
+      radial-gradient(70% 90% at 50% -20%, var(--coral-tint), transparent 70%),
+      var(--bg-raised);
     text-align: center;
-    margin-top: 10px;
-    font-size: 0.82rem;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    color: var(--ink-muted);
-  }
-
-  .precio {
-    text-align: center;
-    background: var(--coral-tint);
-    border-radius: 20px;
-    padding: 40px 24px;
-    max-width: 700px;
-    margin: 0 auto;
+    padding: 46px 26px;
   }
 
   .precio-cifra {
-    font-family: Georgia, serif;
-    font-size: 2.75rem;
-    font-weight: 700;
-    color: var(--coral);
-    margin: 0 0 8px;
+    font-size: clamp(2.3rem, 6vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 10px 0 12px;
+    background: linear-gradient(100deg, #FFFFFF 10%, #FFB79E 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
-  .precio .lede { margin-bottom: 0; }
+  .precio-inner .lede { color: var(--muted); max-width: 44ch; margin: 0 auto; }
+
+  /* ---------- CTA final ---------- */
+
+  .cta-final {
+    position: relative;
+    overflow: hidden;
+    margin-top: 72px;
+    padding: 84px 24px;
+    text-align: center;
+    border-top: 1px solid var(--line);
+  }
+
+  .cta-final h2 { font-size: clamp(1.7rem, 4.4vw, 2.3rem); margin: 14px 0 12px; }
+
+  .cta-final .lede { color: var(--muted); margin: 0 auto 32px; max-width: 46ch; }
+
+  .cta-final .cta-row { justify-content: center; position: relative; }
 
   footer.legal {
     text-align: center;
-    padding: 24px;
-    font-size: 0.8rem;
-    color: var(--ink-muted);
+    padding: 26px 24px 34px;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    border-top: 1px solid var(--line);
+  }
+
+  /* ---------- Movimiento (solo si el visitante no lo tiene reducido) ---------- */
+
+  @media (prefers-reduced-motion: no-preference) {
+    .btn-primary, .btn-secondary {
+      transition: transform 0.16s ease, box-shadow 0.16s ease;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 34px -8px var(--coral-glow), inset 0 1px 0 rgba(255,255,255,0.25);
+    }
+    .btn-secondary:hover { transform: translateY(-2px); }
+
+    .puntos li { transition: transform 0.18s ease, border-color 0.18s ease; }
+    .puntos li:hover { transform: translateY(-2px); border-color: var(--line-bright); }
+
+    .aurora { animation: respirar 16s ease-in-out infinite alternate; }
+    @keyframes respirar {
+      from { opacity: 0.85; transform: scale(1); }
+      to   { opacity: 1;    transform: scale(1.06); }
+    }
+
+    .float-card.wa { animation: flotar 7s ease-in-out infinite alternate; }
+    .float-card.ok { animation: flotar 8s ease-in-out 1.2s infinite alternate-reverse; }
+    @keyframes flotar {
+      from { transform: translateY(-6px); }
+      to   { transform: translateY(7px); }
+    }
+
+    .js .reveal {
+      opacity: 0;
+      transform: translateY(18px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .js .reveal.in { opacity: 1; transform: none; }
   }
 </style>
 
 <!-- Sección 1: Hero -->
 <header class="hero">
-  <span class="eyebrow">AutoFlow AI</span>
-  <h1>¿Cuántas citas se te escapan por no contestar a tiempo?</h1>
-  <p class="lede">AutoFlow AI confirma, recuerda y hace seguimiento de tus citas solo — para que tú te dediques a tu negocio, no al teléfono.</p>
-  <div class="cta-row">
-    <a class="btn-primary" href="https://wa.me/34626786207?text=Hola%2C%20quiero%20saber%20m%C3%A1s%20sobre%20AutoFlow%20AI%20para%20mi%20negocio">💬 Escríbeme por WhatsApp</a>
-    <a class="btn-secondary" href="tel:+34626786207">📞 Llamar</a>
+  <div class="aurora"></div>
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <span class="eyebrow">AutoFlow AI</span>
+      <h1>¿Cuántas citas se te escapan <em>por no contestar a tiempo</em>?</h1>
+      <p class="lede">AutoFlow AI confirma, recuerda y hace seguimiento de tus citas solo — para que tú te dediques a tu negocio, no al teléfono.</p>
+      <div class="cta-row">
+        <a class="btn-primary" href="https://wa.me/34626786207?text=Hola%2C%20quiero%20saber%20m%C3%A1s%20sobre%20AutoFlow%20AI%20para%20mi%20negocio">Escríbeme por WhatsApp</a>
+        <a class="btn-secondary" href="tel:+34626786207">Llamar</a>
+      </div>
+      <div class="trust-row">
+        <span>Sin permanencia</span>
+        <span>Todo incluido</span>
+        <span>Lo instalamos por ti</span>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="phone">
+        <img src="{{IMG_RESERVAS}}" alt="Página pública de reservas de un negocio real en AutoFlow AI, vista en un móvil" />
+      </div>
+      <div class="float-card wa" role="presentation">
+        <div class="fc-head"><span class="fc-dot">✓</span>WhatsApp · enviado solo</div>
+        <div class="fc-body">Hola <strong>Marta</strong> 👋 Te recordamos tu cita <strong>mañana a las 11:30</strong>. ¡Te esperamos!</div>
+      </div>
+      <div class="float-card ok" role="presentation">
+        <div class="fc-head"><span class="fc-dot">✦</span>Nueva reserva</div>
+        <div class="fc-body"><strong>Marta Sánchez</strong> · Corte y peinado<br />Hoy · 11:30 · confirmada sin llamadas</div>
+      </div>
+    </div>
   </div>
 </header>
 
 <!-- Sección 2: Problema -->
-<section class="problema">
-  <span class="section-label"></span>
-  <h2>Si esto te suena, no eres el único</h2>
+<section class="problema reveal">
+  <div class="sec-head">
+    <span class="eyebrow">El día a día</span>
+    <h2>Si esto te suena, no eres el único</h2>
+  </div>
   <ul class="puntos">
     <li><span class="marca">!</span><span>Tardas en contestar y el cliente ya ha reservado en otro sitio.</span></li>
     <li><span class="marca">!</span><span>Pasas horas llamando uno a uno para confirmar las citas del día siguiente.</span></li>
@@ -311,9 +573,11 @@
 </section>
 
 <!-- Sección 3: Solución -->
-<section class="solucion">
-  <span class="section-label"></span>
-  <h2>AutoFlow AI se encarga de todo eso por ti</h2>
+<section class="solucion reveal">
+  <div class="sec-head">
+    <span class="eyebrow">En piloto automático</span>
+    <h2>AutoFlow AI se encarga de todo eso por ti</h2>
+  </div>
   <ul class="puntos">
     <li><span class="marca">✓</span><span>Tu página de reservas está siempre abierta — el cliente reserva solo, a cualquier hora, sin esperar tu respuesta.</span></li>
     <li><span class="marca">✓</span><span>Los recordatorios salen solos por WhatsApp y email 24h antes — sin que tengas que llamar a nadie.</span></li>
@@ -323,48 +587,76 @@
 </section>
 
 <!-- Sección 4: Cómo funciona -->
-<section class="como-funciona">
-  <span class="section-label"></span>
-  <h2>Empezar es más fácil de lo que crees</h2>
-  <ol>
-    <li><p>Yo lo instalo y lo configuro todo por ti — tú no tocas nada técnico.</p></li>
-    <li><p>Cada mañana entras y ves tu panel del día: citas, avisos, todo listo.</p></li>
-    <li><p>Tus clientes reservan solos desde el móvil, sin llamarte.</p></li>
+<section class="como-funciona reveal">
+  <div class="sec-head">
+    <span class="eyebrow">Empezar</span>
+    <h2>Más fácil de lo que crees</h2>
+  </div>
+  <ol class="pasos">
+    <li><p><strong>Yo lo instalo y lo configuro todo por ti</strong> — tú no tocas nada técnico.</p></li>
+    <li><p><strong>Cada mañana entras y ves tu panel del día:</strong> citas, avisos, todo listo.</p></li>
+    <li><p><strong>Tus clientes reservan solos desde el móvil,</strong> sin llamarte.</p></li>
   </ol>
 </section>
 
-<!-- Sección 5: Capturas reales -->
-<section class="capturas">
-  <span class="section-label"></span>
-  <h2>Así se ve de verdad</h2>
-  <p class="lede">Sin maquetas, sin promesas — esto es lo que va a usar tu negocio desde el primer día.</p>
-  <div class="capturas-grid">
-    <figure>
-      <img src="{{IMG_RESERVAS}}" alt="Página pública de reservas de un negocio real en AutoFlow AI" />
-      <figcaption>Tu página de reservas</figcaption>
-    </figure>
-    <figure>
-      <img src="{{IMG_HOY}}" alt="Panel del día de AutoFlow AI con una cita real" />
-      <figcaption>Tu panel del día</figcaption>
-    </figure>
+<!-- Sección 5: Captura real del panel -->
+<section class="capturas reveal">
+  <div class="sec-head">
+    <span class="eyebrow">Producto real</span>
+    <h2>Así se ve de verdad</h2>
+    <p class="lede">Sin maquetas, sin promesas — este es el panel del día que va a usar tu negocio desde el primer día.</p>
+  </div>
+  <div class="browser">
+    <div class="browser-bar">
+      <i></i><i></i><i></i>
+      <span class="url">autoflow.ai / tu-negocio</span>
+    </div>
+    <img src="{{IMG_HOY}}" alt="Panel del día de AutoFlow AI con una cita real" />
   </div>
 </section>
 
 <!-- Sección 6: Precio -->
-<section class="precio-wrap">
-  <div class="precio">
-    <p class="precio-cifra">Desde 45€/mes</p>
-    <p class="lede">Sin permanencia, sin letra pequeña, sin lío técnico. Todo incluido: reservas, recordatorios y seguimiento automático.</p>
+<section class="precio-wrap reveal">
+  <div class="precio-card">
+    <div class="precio-inner">
+      <span class="eyebrow">Precio</span>
+      <p class="precio-cifra">Desde 45€/mes</p>
+      <p class="lede">Sin permanencia, sin letra pequeña, sin lío técnico. Todo incluido: reservas, recordatorios y seguimiento automático.</p>
+    </div>
   </div>
 </section>
 
 <!-- Sección 7: CTA final -->
-<footer class="cta-final">
+<div class="cta-final">
+  <div class="aurora"></div>
+  <span class="eyebrow">Siguiente paso</span>
   <h2>¿Hablamos de tu negocio?</h2>
+  <p class="lede">Cuéntame cómo trabajas hoy y te enseño lo que AutoFlow AI puede quitarte de encima.</p>
   <div class="cta-row">
-    <a class="btn-primary" href="https://wa.me/34626786207?text=Hola%2C%20quiero%20saber%20m%C3%A1s%20sobre%20AutoFlow%20AI%20para%20mi%20negocio">💬 Escríbeme por WhatsApp</a>
-    <a class="btn-secondary" href="tel:+34626786207">📞 Llamar</a>
+    <a class="btn-primary" href="https://wa.me/34626786207?text=Hola%2C%20quiero%20saber%20m%C3%A1s%20sobre%20AutoFlow%20AI%20para%20mi%20negocio">Escríbeme por WhatsApp</a>
+    <a class="btn-secondary" href="tel:+34626786207">Llamar</a>
   </div>
-</footer>
+</div>
 
-<p class="legal">AutoFlow AI — reservas, recordatorios y seguimiento automático para negocios de barrio.</p>
+<footer class="legal">AutoFlow AI — reservas, recordatorios y seguimiento automático para negocios de barrio.</footer>
+
+<script>
+  // Revelado al hacer scroll. Solo se ocultan las secciones si hay JS
+  // (clase .js) y el visitante no tiene el movimiento reducido (el CSS
+  // que las oculta vive dentro de prefers-reduced-motion).
+  document.documentElement.classList.add("js");
+  var observer = new IntersectionObserver(
+    function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) {
+          e.target.classList.add("in");
+          observer.unobserve(e.target);
+        }
+      });
+    },
+    { threshold: 0.12 }
+  );
+  document.querySelectorAll(".reveal").forEach(function (el) {
+    observer.observe(el);
+  });
+</script>
