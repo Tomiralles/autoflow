@@ -64,7 +64,9 @@ export async function runReminders(
     let fired = 0;
 
     for (const apt of appointments ?? []) {
-      if (!apt.client_email || !apt.date || !apt.time) continue;
+      if (!apt.date || !apt.time) continue;
+      // Basta un canal: el recordatorio sale por email, WhatsApp o ambos
+      if (!apt.client_email && !apt.client_phone) continue;
 
       const hoursUntil = horasHastaCita(apt.date, apt.time);
       if (hoursUntil > windowHours || hoursUntil <= 0) continue;
@@ -84,12 +86,14 @@ export async function runReminders(
         renderTemplate(automation.email_body, vars) ||
         `Hola ${apt.client_name},\n\nTe recordamos que tienes una cita programada para el ${apt.date} a las ${hora}${apt.service_name ? ` (${apt.service_name})` : ""}.\n\n¡Te esperamos!\n\n${business.name}`;
 
-      await enviarEmail({
-        to: apt.client_email,
-        fromName: business.name,
-        subject,
-        body,
-      });
+      if (apt.client_email) {
+        await enviarEmail({
+          to: apt.client_email,
+          fromName: business.name,
+          subject,
+          body,
+        });
+      }
 
       if (apt.client_phone) {
         await enviarWhatsApp({
