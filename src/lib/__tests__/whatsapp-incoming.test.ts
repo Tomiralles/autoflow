@@ -44,36 +44,35 @@ describe("detectKeyword", () => {
 });
 
 describe("generateReservationUrl", () => {
-  it("generates URL with business ID", () => {
-    const business = { id: "123e4567-e89b-12d3-a456-426614174000" };
-    const url = generateReservationUrl(business);
+  it("usa el slug del negocio, no el id", () => {
+    const originalEnv = process.env.NEXT_PUBLIC_APP_URL;
+    process.env.NEXT_PUBLIC_APP_URL = "https://custom.example.com";
 
-    expect(url).toContain("123e4567-e89b-12d3-a456-426614174000");
+    const url = generateReservationUrl({ slug: "peluqueria-nova" });
+    expect(url).toBe("https://custom.example.com/peluqueria-nova");
+
+    process.env.NEXT_PUBLIC_APP_URL = originalEnv;
   });
 
-  it("uses NEXT_PUBLIC_SITE_URL when set", () => {
-    const originalEnv = process.env.NEXT_PUBLIC_SITE_URL;
-    process.env.NEXT_PUBLIC_SITE_URL = "https://custom.example.com";
+  it("recorta la barra final de NEXT_PUBLIC_APP_URL", () => {
+    const originalEnv = process.env.NEXT_PUBLIC_APP_URL;
+    process.env.NEXT_PUBLIC_APP_URL = "https://custom.example.com/";
 
-    const business = { id: "abc123" };
-    const url = generateReservationUrl(business);
+    const url = generateReservationUrl({ slug: "strategia" });
+    expect(url).toBe("https://custom.example.com/strategia");
 
-    expect(url).toBe("https://custom.example.com/abc123");
-
-    process.env.NEXT_PUBLIC_SITE_URL = originalEnv;
+    process.env.NEXT_PUBLIC_APP_URL = originalEnv;
   });
 
-  it("defaults to autoflow.vercel.app", () => {
-    const originalEnv = process.env.NEXT_PUBLIC_SITE_URL;
-    delete process.env.NEXT_PUBLIC_SITE_URL;
+  it("por defecto usa el dominio oficial de producción", () => {
+    const originalEnv = process.env.NEXT_PUBLIC_APP_URL;
+    delete process.env.NEXT_PUBLIC_APP_URL;
 
-    const business = { id: "xyz789" };
-    const url = generateReservationUrl(business);
-
-    expect(url).toBe("https://autoflow.vercel.app/xyz789");
+    const url = generateReservationUrl({ slug: "xyz789" });
+    expect(url).toBe("https://autoflow-five-alpha.vercel.app/xyz789");
 
     if (originalEnv) {
-      process.env.NEXT_PUBLIC_SITE_URL = originalEnv;
+      process.env.NEXT_PUBLIC_APP_URL = originalEnv;
     }
   });
 });

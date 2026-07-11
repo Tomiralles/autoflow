@@ -47,11 +47,13 @@ export async function rateLimitCheck(
 }
 
 /**
- * Generate the public reservation URL for a business.
- * Format: https://autoflow.vercel.app/[business_slug]
+ * Enlace a la página pública de reservas del negocio: {APP_URL}/{slug}.
  */
-export function generateReservationUrl(business: { id: string }): string {
-  // Use business ID as slug (simple, guaranteed unique)
-  const baseUrl = (process.env.NEXT_PUBLIC_SITE_URL || "https://autoflow.vercel.app").trim();
-  return `${baseUrl}/${business.id}`;
+export function generateReservationUrl(business: { slug: string }): string {
+  const baseUrl = (
+    process.env.NEXT_PUBLIC_APP_URL || "https://autoflow-five-alpha.vercel.app"
+  )
+    .trim()
+    .replace(/\/$/, "");
+  return `${baseUrl}/${business.slug}`;
 }
