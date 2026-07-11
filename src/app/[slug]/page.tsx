@@ -168,6 +168,7 @@ export default async function PublicPage({ params }: PageProps) {
           working_hours: biz.working_hours,
           services: biz.services,
           staff: biz.staff,
+          closures: biz.closures ?? [],
           show_prices: settings.show_prices !== false,
         }}
       />

@@ -41,6 +41,56 @@ export async function guardarNegocio(
   return { ok: true };
 }
 
+// ---------- Vacaciones y días cerrados ----------
+
+export interface CierreInput {
+  start_date: string;
+  end_date: string;
+  reason: string | null;
+}
+
+export async function crearCierre(
+  businessId: string,
+  slug: string,
+  input: CierreInput
+): Promise<ActionResult> {
+  if (!input.start_date || !input.end_date) {
+    return { error: "Falta la fecha." };
+  }
+  if (input.end_date < input.start_date) {
+    return { error: "La fecha final no puede ser anterior a la inicial." };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("business_closures").insert({
+    business_id: businessId,
+    start_date: input.start_date,
+    end_date: input.end_date,
+    reason: input.reason,
+  });
+  if (error) return { error: "No se pudo guardar el cierre." };
+
+  revalidatePath("/ajustes");
+  revalidatePath(`/${slug}`);
+  return { ok: true };
+}
+
+export async function borrarCierre(
+  cierreId: string,
+  slug: string
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("business_closures")
+    .delete()
+    .eq("id", cierreId);
+  if (error) return { error: "No se pudo eliminar el cierre." };
+
+  revalidatePath("/ajustes");
+  revalidatePath(`/${slug}`);
+  return { ok: true };
+}
+
 // ---------- Horario de apertura ----------
 
 export async function guardarHorario(

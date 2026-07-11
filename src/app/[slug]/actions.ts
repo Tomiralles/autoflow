@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { enviarEmail } from "@/lib/email";
+import { enviarWhatsApp } from "@/lib/whatsapp";
 import { buildIcsContent } from "@/lib/ics";
 import { renderTemplate } from "@/lib/notifications";
 import type { Ocupacion } from "@/lib/slots";
@@ -51,6 +52,7 @@ const ERRORES: Record<string, string> = {
   hueco_ocupado: "Justo se ha reservado esa hora. Elige otra, por favor.",
   fuera_de_horario: "Esa hora queda fuera del horario. Elige otra, por favor.",
   fecha_pasada: "Esa fecha ya ha pasado.",
+  cerrado: "Ese día estamos cerrados. Elige otra fecha, por favor.",
   datos_invalidos: "Revisa tus datos e inténtalo de nuevo.",
   negocio_no_encontrado: "Este negocio no está disponible ahora mismo.",
   servicio_no_encontrado: "Ese servicio ya no está disponible.",
@@ -152,6 +154,45 @@ export async function reservar(
         },
       ],
     });
+  }
+
+  // Aviso instantáneo al DUEÑO: que se entere de cada reserva sin tener
+  // que abrir la app. Email y WhatsApp según lo que tenga el negocio;
+  // si falla, la reserva del cliente no se ve afectada.
+  try {
+    const { data: pub } = await supabase.rpc("get_public_business", {
+      p_slug: slug,
+    });
+    const negocio = pub as { email?: string | null; phone?: string | null } | null;
+    const fechaAviso = new Intl.DateTimeFormat("es-ES", {
+      timeZone: "Europe/Madrid",
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    }).format(new Date(`${input.date}T12:00:00`));
+    const resumen = `Nueva reserva: ${input.full_name} — ${res.service_name || "cita"} el ${fechaAviso} a las ${input.time}${res.staff_name ? ` con ${res.staff_name}` : ""}.`;
+    const appUrl =
+      process.env.NEXT_PUBLIC_APP_URL || "https://autoflow-five-alpha.vercel.app";
+
+    if (negocio?.email) {
+      await enviarEmail({
+        to: negocio.email,
+        fromName: "AutoFlow AI",
+        subject: `Nueva reserva: ${input.full_name} — ${fechaAviso}, ${input.time}`,
+        body: `${resumen}\n\nLa tienes en tu panel para confirmarla:\n${appUrl}/hoy\n\n— AutoFlow AI`,
+      });
+    }
+    if (negocio?.phone) {
+      // El teléfono del negocio suele guardarse sin prefijo; producto
+      // solo-España (todo corre en Europe/Madrid)
+      const tel = negocio.phone.replace(/\s/g, "");
+      await enviarWhatsApp({
+        phone: tel.startsWith("+") ? tel : `+34${tel}`,
+        message: `${resumen} Entra en tu panel para confirmarla: ${appUrl}/hoy`,
+      });
+    }
+  } catch (e) {
+    console.error("[reserva] aviso al dueño falló:", e);
   }
 
   return { ok: true, staff_name: res.staff_name ?? null };

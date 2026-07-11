@@ -30,6 +30,11 @@ export interface PublicStaff {
 
 export type { DayHours };
 
+export interface PublicClosure {
+  start: string; // ISO, inclusive
+  end: string; // ISO, inclusive
+}
+
 export interface PublicBusiness {
   name: string;
   slug: string;
@@ -38,6 +43,7 @@ export interface PublicBusiness {
   working_hours: Record<string, DayHours> | null;
   services: PublicService[];
   staff: PublicStaff[];
+  closures: PublicClosure[];
   show_prices: boolean;
 }
 
@@ -111,17 +117,21 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
     [business.working_hours]
   );
 
-  // Un día se puede elegir si lo trabaja alguien relevante
+  // Un día se puede elegir si no cae en vacaciones/cierre y lo trabaja
+  // alguien relevante
   const diaAbierto = useCallback(
-    (iso: string): boolean =>
-      staffRelevante
+    (iso: string): boolean => {
+      if (business.closures.some((c) => iso >= c.start && iso <= c.end))
+        return false;
+      return staffRelevante
         ? staffRelevante.some(
             (s) =>
               horarioDelDiaLib(iso, s.working_hours ?? business.working_hours)
                 .open
           )
-        : (horarioDelDia(iso).open ?? false),
-    [staffRelevante, business.working_hours, horarioDelDia]
+        : (horarioDelDia(iso).open ?? false);
+    },
+    [staffRelevante, business.working_hours, business.closures, horarioDelDia]
   );
 
   const elegirFecha = (iso: string) => {
@@ -175,7 +185,11 @@ export function ReservaWidget({ business }: { business: PublicBusiness }) {
       });
       if (r.error) {
         setError(r.error);
-        if (r.codigo === "hueco_ocupado" || r.codigo === "fuera_de_horario") {
+        if (
+          r.codigo === "hueco_ocupado" ||
+          r.codigo === "fuera_de_horario" ||
+          r.codigo === "cerrado"
+        ) {
           setHora(null);
           setPaso("calendario");
           const res = await huecosOcupados(business.slug, fecha);

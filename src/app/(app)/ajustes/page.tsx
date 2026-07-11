@@ -16,6 +16,7 @@ import {
   NuevoTrabajadorDialog,
   type TrabajadorRow,
 } from "./equipo-widgets";
+import { FilaCierre, NuevoCierreDialog, type CierreRow } from "./cierres-widgets";
 import type { Horario } from "@/components/horario-editor";
 
 export default async function AjustesPage() {
@@ -34,7 +35,7 @@ export default async function AjustesPage() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [serviciosRes, perfilRes, aparienciaRes, equipoRes] = await Promise.all([
+  const [serviciosRes, perfilRes, aparienciaRes, equipoRes, cierresRes] = await Promise.all([
     supabase
       .from("services")
       .select(
@@ -56,10 +57,18 @@ export default async function AjustesPage() {
       .eq("business_id", business.id)
       .order("sort_order")
       .order("created_at"),
+    // Solo cierres vigentes o futuros; los pasados no aportan nada
+    supabase
+      .from("business_closures")
+      .select("id, start_date, end_date, reason")
+      .eq("business_id", business.id)
+      .gte("end_date", new Date().toISOString().slice(0, 10))
+      .order("start_date"),
   ]);
 
   const servicios = (serviciosRes.data ?? []) as ServicioRow[];
   const equipo = (equipoRes.data ?? []) as TrabajadorRow[];
+  const cierres = (cierresRes.data ?? []) as CierreRow[];
   const esAdmin = perfilRes.data?.role === "admin";
   const apariencia = aparienciaRes.data as {
     secondary_color: string | null;
@@ -137,6 +146,32 @@ export default async function AjustesPage() {
           slug={business.slug}
           inicial={apariencia?.working_hours ?? null}
         />
+      </div>
+
+      <div className="rounded-xl border border-slate-100 bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-100 px-5 py-3">
+          <div>
+            <h2 className="text-sm font-bold text-slate-700">
+              Vacaciones y días cerrados
+            </h2>
+            <p className="text-xs text-slate-500">
+              Esos días tus clientes no podrán reservar
+            </p>
+          </div>
+          <NuevoCierreDialog businessId={business.id} slug={business.slug} />
+        </div>
+        <div className="divide-y divide-slate-50">
+          {cierres.length === 0 ? (
+            <p className="p-6 text-center text-sm text-slate-400">
+              ¿Vacaciones, un puente, una tarde libre? Añádelo y la agenda se
+              cierra sola esos días
+            </p>
+          ) : (
+            cierres.map((c) => (
+              <FilaCierre key={c.id} cierre={c} slug={business.slug} />
+            ))
+          )}
+        </div>
       </div>
 
       <div className="rounded-xl border border-slate-100 bg-white shadow-sm">
