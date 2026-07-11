@@ -457,6 +457,46 @@ async function runReporteSemanal(supabase: SupabaseClient): Promise<number> {
   return enviados;
 }
 
+// Aviso al administrador de la PLATAFORMA (cobro manual): un email diario
+// con los negocios activos cuyo pago vence en ≤7 días o ya venció. Solo
+// se envía si hay algo que cobrar; al vencer NO se apaga nada solo — el
+// admin decide en /admin (semáforo + botón "+1 mes").
+async function runAvisoVencimientos(supabase: SupabaseClient): Promise<number> {
+  const adminEmail = process.env.ADMIN_EMAIL;
+  if (!adminEmail) return 0;
+
+  const hoy = hoyISO();
+  const d = new Date(`${hoy}T12:00:00`);
+  d.setDate(d.getDate() + 7);
+  const limite = d.toISOString().slice(0, 10);
+
+  const { data: negocios } = await supabase
+    .from("businesses")
+    .select("name, slug, paid_until")
+    .eq("plan_status", "active")
+    .not("paid_until", "is", null)
+    .lte("paid_until", limite)
+    .order("paid_until");
+
+  if (!negocios?.length) return 0;
+
+  const lineas = negocios.map((n) => {
+    const fecha = new Date(`${n.paid_until}T12:00:00`).toLocaleDateString("es-ES");
+    return n.paid_until < hoy
+      ? `🔴 ${n.name} (/${n.slug}) — VENCIDO desde el ${fecha}`
+      : `🟡 ${n.name} (/${n.slug}) — vence el ${fecha}`;
+  });
+
+  const ok = await enviarEmail({
+    to: adminEmail,
+    fromName: "AutoFlow AI",
+    subject: `Cobros pendientes: ${negocios.length} ${negocios.length === 1 ? "negocio" : "negocios"}`,
+    body: `Suscripciones que necesitan cobro:\n\n${lineas.join("\n")}\n\nCuando cobres, pulsa "+1 mes" en el panel de Administración.\n\n— AutoFlow AI`,
+  });
+
+  return ok ? negocios.length : 0;
+}
+
 export async function runDailyAutomations(
   supabase: SupabaseClient
 ): Promise<{ processed: number; porRutina: Record<string, number> }> {
@@ -467,6 +507,7 @@ export async function runDailyAutomations(
     factura_vencida: await runFacturaVencida(supabase),
     no_contesto: await runNoContesto(supabase),
     reporte_semanal: await runReporteSemanal(supabase),
+    aviso_vencimientos: await runAvisoVencimientos(supabase),
   };
   return {
     processed: Object.values(porRutina).reduce((a, b) => a + b, 0),

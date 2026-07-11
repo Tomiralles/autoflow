@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { hoyISO } from "@/lib/dates";
 
 export interface ActionResult {
   ok?: true;
@@ -30,6 +31,38 @@ export async function adminActualizarNegocio(
 
   if (error || !data?.length) {
     return { error: "No se pudo actualizar el negocio." };
+  }
+
+  revalidatePath("/admin");
+  return { ok: true };
+}
+
+// Cobro recibido: extiende "pagado hasta" un mes. Si ya tenía fecha futura,
+// suma desde ahí (pagar antes de tiempo no regala días); si estaba vencido
+// o sin fecha, suma desde hoy.
+export async function adminRenovarMes(businessId: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: negocio } = await supabase
+    .from("businesses")
+    .select("paid_until")
+    .eq("id", businessId)
+    .single();
+
+  const hoy = hoyISO();
+  const base =
+    negocio?.paid_until && negocio.paid_until > hoy ? negocio.paid_until : hoy;
+  const d = new Date(`${base}T12:00:00`);
+  d.setMonth(d.getMonth() + 1);
+  const nuevaFecha = d.toISOString().slice(0, 10);
+
+  const { data, error } = await supabase
+    .from("businesses")
+    .update({ paid_until: nuevaFecha })
+    .eq("id", businessId)
+    .select("id");
+
+  if (error || !data?.length) {
+    return { error: "No se pudo renovar." };
   }
 
   revalidatePath("/admin");
