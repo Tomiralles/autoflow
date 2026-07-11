@@ -161,6 +161,21 @@ export function FormNegocio({
           onChange={(e) => set("description", e.target.value)}
         />
       </div>
+      <div className="space-y-2">
+        <Label htmlFor="aj-resenas">Enlace de reseñas de Google</Label>
+        <p className="text-xs text-slate-500">
+          Si lo pones, al terminar cada servicio le pedimos la reseña al
+          cliente por ti (en Google Maps: Compartir → &quot;Escribir una
+          reseña&quot;)
+        </p>
+        <Input
+          id="aj-resenas"
+          type="url"
+          placeholder="https://g.page/r/..."
+          value={form.google_review_url}
+          onChange={(e) => set("google_review_url", e.target.value)}
+        />
+      </div>
       <Button onClick={guardar} disabled={pending || !form.name.trim()}>
         {pending ? "Guardando..." : "Guardar cambios"}
       </Button>

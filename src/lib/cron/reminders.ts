@@ -56,7 +56,7 @@ export async function runReminders(
 
     const { data: appointments } = await supabase
       .from("appointments")
-      .select("id, client_name, client_email, client_phone, date, time, service_name, status")
+      .select("id, client_name, client_email, client_phone, date, time, service_name, status, cancel_token")
       .eq("business_id", automation.business_id)
       .eq("reminder_sent", false)
       .in("status", ["pendiente", "confirmada"])
@@ -83,9 +83,14 @@ export async function runReminders(
       const subject =
         renderTemplate(automation.email_subject, vars) ||
         `Recordatorio de tu cita con ${business.name}`;
-      const body =
+      const cuerpoBase =
         renderTemplate(automation.email_body, vars) ||
         `Hola ${apt.client_name},\n\nTe recordamos que tienes una cita programada para el ${apt.date} a las ${hora}${apt.service_name ? ` (${apt.service_name})` : ""}.\n\n¡Te esperamos!\n\n${business.name}`;
+      // Enlace de auto-cancelación: si no puede venir, libera el hueco a
+      // tiempo en vez de dejar plantado al negocio
+      const body = apt.cancel_token
+        ? `${cuerpoBase}\n\n¿No puedes venir? Cancela aquí y liberas el hueco:\n${process.env.NEXT_PUBLIC_APP_URL || "https://autoflow-five-alpha.vercel.app"}/cancelar/${apt.cancel_token}`
+        : cuerpoBase;
 
       if (apt.client_email) {
         await enviarEmail({

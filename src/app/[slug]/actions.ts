@@ -87,6 +87,7 @@ export async function reservar(
   const res = data as {
     error?: string;
     appointment_id?: string;
+    cancel_token?: string;
     business_name?: string;
     business_phone?: string | null;
     business_address?: string | null;
@@ -142,11 +143,15 @@ export async function reservar(
       clientName: input.full_name,
     });
 
+    const lineaCancelar = res.cancel_token
+      ? `\n\n¿No puedes venir? Cancela tu cita aquí y liberas el hueco:\n${process.env.NEXT_PUBLIC_APP_URL || "https://autoflow-five-alpha.vercel.app"}/cancelar/${res.cancel_token}`
+      : "";
+
     await enviarEmail({
       to: email,
       fromName: res.business_name ?? undefined,
       subject,
-      body: `${body}\n\nTe adjuntamos la cita para tu calendario (Google, Apple, Outlook...).`,
+      body: `${body}\n\nTe adjuntamos la cita para tu calendario (Google, Apple, Outlook...).${lineaCancelar}`,
       attachments: [
         {
           filename: `cita-${input.date}.ics`,

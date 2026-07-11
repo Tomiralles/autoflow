@@ -15,6 +15,7 @@ export interface NegocioInput {
   email: string;
   address: string;
   description: string;
+  google_review_url: string;
 }
 
 export async function guardarNegocio(
@@ -22,6 +23,10 @@ export async function guardarNegocio(
   input: NegocioInput
 ): Promise<ActionResult> {
   if (!input.name.trim()) return { error: "El nombre es obligatorio." };
+  const resenas = input.google_review_url.trim();
+  if (resenas && !/^https?:\/\//i.test(resenas)) {
+    return { error: "El enlace de reseñas debe empezar por https://" };
+  }
 
   const supabase = await createClient();
   const { error } = await supabase
@@ -32,6 +37,7 @@ export async function guardarNegocio(
       email: input.email.trim() || null,
       address: input.address.trim() || null,
       description: input.description.trim() || null,
+      google_review_url: resenas || null,
     })
     .eq("id", businessId);
   if (error) return { error: "No se pudieron guardar los cambios." };

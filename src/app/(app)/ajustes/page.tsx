@@ -48,7 +48,7 @@ export default async function AjustesPage() {
     supabase.from("profiles").select("role").eq("id", user!.id).single(),
     supabase
       .from("businesses")
-      .select("secondary_color, logo_url, hero_image_url, working_hours")
+      .select("secondary_color, logo_url, hero_image_url, working_hours, google_review_url")
       .eq("id", business.id)
       .single(),
     supabase
@@ -75,6 +75,7 @@ export default async function AjustesPage() {
     logo_url: string | null;
     hero_image_url: string | null;
     working_hours: Horario | null;
+    google_review_url: string | null;
   } | null;
 
   return (
@@ -113,6 +114,7 @@ export default async function AjustesPage() {
             email: business.email ?? "",
             address: business.address ?? "",
             description: business.description ?? "",
+            google_review_url: apariencia?.google_review_url ?? "",
           }}
         />
       </div>

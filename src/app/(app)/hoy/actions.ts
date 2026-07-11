@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { hoyISO } from "@/lib/dates";
+import { enviarEmail } from "@/lib/email";
+import { enviarWhatsApp } from "@/lib/whatsapp";
 import {
   APPOINTMENT_STATUS_TO_STAGE,
   completeService,
@@ -109,6 +111,37 @@ export async function faenaTerminada(
     },
     { notifyClient: avisarCliente }
   );
+
+  // Petición de reseña en Google: si el negocio tiene su enlace puesto en
+  // Ajustes, un gracias con el enlace justo al terminar (el mejor momento
+  // para pedirla). WhatsApp si hay teléfono; si no, email. Nunca bloquea.
+  try {
+    const { data: biz } = await supabase
+      .from("businesses")
+      .select("name, google_review_url, whatsapp_instance_id, whatsapp_api_token")
+      .eq("id", apt.business_id)
+      .single();
+    if (biz?.google_review_url && (apt.client_phone || apt.client_email)) {
+      const msg = `¡Gracias por tu visita a ${biz.name}! 😊\n\nSi has quedado contento/a, ¿nos dejas una reseña en Google? Se tarda un minuto y nos ayuda muchísimo:\n${biz.google_review_url}`;
+      if (apt.client_phone) {
+        await enviarWhatsApp({
+          phone: apt.client_phone,
+          message: msg,
+          instanceId: biz.whatsapp_instance_id,
+          token: biz.whatsapp_api_token,
+        });
+      } else {
+        await enviarEmail({
+          to: apt.client_email,
+          fromName: biz.name,
+          subject: `¡Gracias por tu visita! — ${biz.name}`,
+          body: msg,
+        });
+      }
+    }
+  } catch (e) {
+    console.error("[faena] petición de reseña falló:", e);
+  }
 
   revalidatePath("/hoy");
   revalidatePath("/citas");
