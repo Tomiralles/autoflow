@@ -40,6 +40,8 @@ const CAMPOS_NEGOCIO = "id, name, slug, whatsapp_instance_id, whatsapp_api_token
 // El mensaje entrante no trae business_id: se resuelve por la instancia
 // de UltraMsg del negocio, con fallback a WHATSAPP_DEFAULT_BUSINESS_ID
 // (la instancia de plataforma es compartida y no identifica al negocio).
+// Los negocios inactivos (impago) no responden: su página está apagada
+// y el enlace daría 404.
 async function resolverNegocio(
   supabase: SupabaseClient,
   businessId: string | undefined,
@@ -50,7 +52,8 @@ async function resolverNegocio(
       .from("businesses")
       .select(CAMPOS_NEGOCIO)
       .eq("id", businessId)
-      .single();
+      .neq("plan_status", "inactive")
+      .maybeSingle();
     if (data) return data;
   }
   if (instanceId) {
@@ -58,6 +61,7 @@ async function resolverNegocio(
       .from("businesses")
       .select(CAMPOS_NEGOCIO)
       .eq("whatsapp_instance_id", instanceId)
+      .neq("plan_status", "inactive")
       .limit(1)
       .maybeSingle();
     if (data) return data;
@@ -68,7 +72,8 @@ async function resolverNegocio(
       .from("businesses")
       .select(CAMPOS_NEGOCIO)
       .eq("id", defaultId)
-      .single();
+      .neq("plan_status", "inactive")
+      .maybeSingle();
     if (data) return data;
   }
   return null;

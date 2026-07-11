@@ -48,10 +48,11 @@ export async function runReminders(
 
     const { data: business } = await supabase
       .from("businesses")
-      .select("id, name, phone, address, whatsapp_instance_id, whatsapp_api_token")
+      .select("id, name, phone, address, plan_status, whatsapp_instance_id, whatsapp_api_token")
       .eq("id", automation.business_id)
       .single();
-    if (!business) continue;
+    // Negocio dado de baja (impago): no gastar mensajes en sus citas
+    if (!business || business.plan_status === "inactive") continue;
 
     const { data: appointments } = await supabase
       .from("appointments")
