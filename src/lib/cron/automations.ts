@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { enviarEmail } from "@/lib/email";
 import { renderTemplate } from "@/lib/notifications";
 import { hoyISO } from "@/lib/dates";
+import { generateReservationUrl } from "@/lib/whatsapp/incoming";
 
 // Rutinas diarias por sondeo (cron diario). Portadas de
 // base44/functions/checkInactiveLeads/entry.ts, que pese al nombre
@@ -162,7 +163,16 @@ async function runClienteInactivo(supabase: SupabaseClient): Promise<number> {
 
   for (const automation of await automationsActivas(supabase, "cliente_inactivo")) {
     const cutoff = diasAtras(automation.condition_days || 30);
-    const negocio = await nombreNegocio(supabase, automation.business_id);
+    // Nombre + slug: la plantilla de reactivación incluye {{enlace}} para
+    // que el cliente reserve su próxima cita sin escribir ni llamar
+    const { data: biz } = await supabase
+      .from("businesses")
+      .select("name, slug")
+      .eq("id", automation.business_id)
+      .single();
+    if (!biz) continue;
+    const negocio = biz.name;
+    const enlace = generateReservationUrl(biz);
 
     const { data: leads } = await supabase
       .from("leads")
@@ -184,7 +194,7 @@ async function runClienteInactivo(supabase: SupabaseClient): Promise<number> {
         continue;
       if (!lead.email) continue;
 
-      const vars = { nombre: lead.full_name, negocio };
+      const vars = { nombre: lead.full_name, negocio, enlace };
       await enviarEmail({
         to: lead.email,
         fromName: negocio,

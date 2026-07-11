@@ -66,9 +66,9 @@ export const TEMPLATES: AutomationTemplate[] = [
     action_type: "enviar_email",
     condition_days: 0,
     icon: "🎉",
-    default_subject: "¡Gracias por elegirnos!",
+    default_subject: "¡Bienvenido/a! Gracias por confiar en nosotros",
     default_body:
-      "Hola {{nombre}},\n\nMuchas gracias por confiar en nosotros.\n\nTu servicio ha sido registrado y estamos aquí para cualquier consulta.\n\nUn saludo,\n{{negocio}}",
+      "Hola {{nombre}},\n\n¡Mil gracias por confiar en nosotros! Te damos la bienvenida: desde hoy ya eres de la casa.\n\nEsperamos que hayas quedado encantado/a. Y si hay cualquier cosa que podamos mejorar, cuéntanosla — nos ayuda muchísimo.\n\nUn abrazo,\n{{negocio}}",
     category: "Ventas",
   },
   {
@@ -94,9 +94,9 @@ export const TEMPLATES: AutomationTemplate[] = [
     action_type: "enviar_email",
     condition_days: 2,
     icon: "✉️",
-    default_subject: "¿Sigues interesado/a?",
+    default_subject: "Te estamos guardando el hueco, {{nombre}} 😉",
     default_body:
-      "Hola {{nombre}},\n\nQueríamos saber si sigues interesado/a en continuar con nosotros. Si tienes alguna duda, estamos aquí para ayudarte.\n\nUn saludo,\n{{negocio}}",
+      "Hola {{nombre}},\n\nNo queremos ser pesados (prometido 🤞), pero nos quedamos con las ganas de atenderte.\n\nSi le sigues dando vueltas, cuéntanos qué duda tienes y te la resolvemos en un minuto. Y si no es el momento, no pasa nada: te guardamos el sitio.\n\n{{negocio}}",
     category: "Seguimiento",
   },
   {
@@ -107,9 +107,9 @@ export const TEMPLATES: AutomationTemplate[] = [
     action_type: "enviar_email",
     condition_days: 30,
     icon: "🔄",
-    default_subject: "¡Te echamos de menos!",
+    default_subject: "Ya ha pasado un mes... ¿cómo lo llevas?",
     default_body:
-      "Hola {{nombre}},\n\nHace un tiempo que no sabemos de ti. ¿Podemos ayudarte con algo?\n\nTenemos novedades que te pueden interesar. ¡Contáctanos!\n\n{{negocio}}",
+      "Hola {{nombre}},\n\n¡Cómo pasa el tiempo! Ya hace un mes desde tu última visita y queríamos saber cómo estás.\n\nSi te hace falta un repaso o quieres tu próxima cita, resérvala aquí en un minuto:\n{{enlace}}\n\n¡Nos vemos pronto!\n\n{{negocio}}",
     category: "Retención",
   },
   {
