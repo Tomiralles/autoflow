@@ -1,17 +1,33 @@
+import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 import { getBusinessOrRedirect } from "@/lib/business";
 import { createClient } from "@/lib/supabase/server";
 import { fechaCortaES, hoyISO } from "@/lib/dates";
 import { NuevaCitaDialog } from "./nueva-cita";
 import { FilaCita } from "./fila-cita";
+import { SemanaView } from "./semana-view";
 import type { AptRow } from "../hoy/panel-widgets";
 
 type Cita = AptRow & { notes: string | null };
 
-export default async function CitasPage() {
+export default async function CitasPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ vista?: string }>;
+}) {
+  const { vista } = await searchParams;
+  const esSemana = vista === "semana";
   const business = await getBusinessOrRedirect();
   const supabase = await createClient();
   const hoy = hoyISO();
+
+  // La vista semanal enseña la semana entera (incluidos los días ya
+  // pasados de esta semana); la lista sigue siendo "a partir de hoy"
+  const lunesActual = (() => {
+    const d = new Date(`${hoy}T12:00:00`);
+    d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    return d.toISOString().slice(0, 10);
+  })();
 
   const [citasRes, serviciosRes, equipoRes] = await Promise.all([
     supabase
@@ -20,7 +36,7 @@ export default async function CitasPage() {
         "id, client_name, client_phone, date, time, service_name, status, materials_notes, notes, staff:staff_id(name)"
       )
       .eq("business_id", business.id)
-      .gte("date", hoy)
+      .gte("date", lunesActual)
       .order("date")
       .order("time"),
     supabase
@@ -40,9 +56,10 @@ export default async function CitasPage() {
 
   // El embed staff:staff_id(name) llega como objeto anidado → se aplana
   type RawCita = Cita & { staff: { name: string } | null };
-  const citas: Cita[] = ((citasRes.data ?? []) as unknown as RawCita[]).map(
+  const todas: Cita[] = ((citasRes.data ?? []) as unknown as RawCita[]).map(
     ({ staff, ...c }) => ({ ...c, staff_name: staff?.name ?? null })
   );
+  const citas = todas.filter((c) => c.date >= hoy);
   const porDia = new Map<string, Cita[]>();
   for (const c of citas) {
     const grupo = porDia.get(c.date) ?? [];
@@ -50,13 +67,17 @@ export default async function CitasPage() {
     porDia.set(c.date, grupo);
   }
 
+  const pillBase = "rounded-full px-3 py-1 text-xs font-semibold transition-colors";
+  const pillOn = "bg-brand text-white";
+  const pillOff = "bg-slate-100 text-slate-500 hover:bg-slate-200";
+
   return (
     <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Citas</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Tu agenda a partir de hoy
+            {esSemana ? "Tu semana de un vistazo" : "Tu agenda a partir de hoy"}
           </p>
         </div>
         <NuevaCitaDialog
@@ -67,7 +88,32 @@ export default async function CitasPage() {
         />
       </div>
 
-      {citas.length === 0 ? (
+      <div className="flex items-center gap-2">
+        <Link href="/citas" className={`${pillBase} ${esSemana ? pillOff : pillOn}`}>
+          Lista
+        </Link>
+        <Link
+          href="/citas?vista=semana"
+          className={`${pillBase} ${esSemana ? pillOn : pillOff}`}
+        >
+          Semana
+        </Link>
+      </div>
+
+      {esSemana ? (
+        <SemanaView
+          hoy={hoy}
+          citas={todas.map((c) => ({
+            id: c.id,
+            client_name: c.client_name,
+            date: c.date,
+            time: c.time,
+            service_name: c.service_name,
+            status: c.status,
+            staff_name: c.staff_name ?? null,
+          }))}
+        />
+      ) : citas.length === 0 ? (
         <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center">
           <CalendarDays size={36} className="mx-auto mb-3 text-slate-300" />
           <p className="font-medium text-slate-600">No hay citas próximas</p>
